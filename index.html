@@ -32,14 +32,15 @@
 <body>
 
     <h1>Eco FoodCalc - Diet Optimizer</h1>
-    <p>Current Session Status: <span id="user-session">Loading preferences...</span></p>
+    
+    <p>Current Session Status: <span id="user-session"></span></p> 
     <p>This tool helps maximize your **Nutrition Bonus** for faster skill point gain in Eco.</p>
     
     <div id="food-container"></div> 
 
     <footer>
         <hr>
-        <p>Created by CrazySpy - Version 0.1 - Last update: <span id="last-update-date">...fetching commit data...</span></p>
+        <p>Created by CrazySpy - Version 0.1 - Last update: <span id="last-update-date"></span></p>
     </footer>
 
     <script>
@@ -69,6 +70,9 @@
          */
         async function initApp() {
             const container = document.getElementById('food-container');
+            const sessionElement = document.getElementById('user-session');
+            
+            sessionElement.textContent = 'Checking preferences...';
             container.innerHTML = 'Loading food data...'; // Dynamic loading message
 
             try {
@@ -88,6 +92,7 @@
             } catch (error) {
                 console.error("Error loading or processing JSON:", error);
                 container.innerHTML = `<p style="color: red;">Error loading ${FOOD_SOURCE_URL}. Please check the file name and format.</p>`;
+                sessionElement.textContent = 'Failed to start session.';
             }
 
             // 4. Fetch the last commit date (footer)
@@ -99,9 +104,11 @@
          */
         function loadUserPreferences() {
             const storedData = localStorage.getItem(DATA_STORAGE_KEY);
+            const sessionElement = document.getElementById('user-session');
+
             if (storedData) {
                 userPreferences = JSON.parse(storedData);
-                document.getElementById('user-session').textContent = 'Preferences loaded.';
+                sessionElement.textContent = 'Preferences loaded.';
             } else {
                 // Initialize preferences: every item starts as 'Never Tried'
                 foodData.forEach(item => {
@@ -113,7 +120,7 @@
                     };
                 });
                 saveUserPreferences();
-                document.getElementById('user-session').textContent = 'New session initialized (All set to Never Tried).';
+                sessionElement.textContent = 'New session initialized (All set to Never Tried).';
             }
         }
 
@@ -196,6 +203,8 @@
          */
         async function fetchLastCommitDate() {
             const dateElement = document.getElementById('last-update-date');
+            dateElement.textContent = 'fetching commit data...'; // Dynamic loading
+
             const repoOwner = 'Crazy-Spy';
             const repoName = 'EcoFoodCalc';
             const branchName = 'main'; 
