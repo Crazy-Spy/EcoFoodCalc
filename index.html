@@ -11,6 +11,7 @@
         .food-list { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .food-list th, .food-list td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         .food-list th { background-color: #f2f2f2; }
+        
         /* Status and Tag Styles */
         .status-select { padding: 5px; border-radius: 4px; }
         .tag-button { 
@@ -23,22 +24,28 @@
         }
         .tag-favorite { background-color: #ffd700; border-color: gold; font-weight: bold; }
         .tag-worst { background-color: #ffb6c1; border-color: #f08080; }
+
+        /* Footer Style */
+        footer { margin-top: 50px; font-size: 0.8em; color: #666; }
     </style>
 </head>
 <body>
 
     <h1>Eco FoodCalc - Diet Optimizer</h1>
-    <p>Current Session Status: <span id="user-session">Loading...</span></p>
+    <p>Current Session Status: <span id="user-session">Loading preferences...</span></p>
     <p>This tool helps maximize your **Nutrition Bonus** for faster skill point gain in Eco.</p>
     
-    <div id="food-container">
-        Loading data...
-    </div>
+    <div id="food-container"></div> 
+
+    <footer>
+        <hr>
+        <p>Created by CrazySpy - Version 0.1 - Last update: <span id="last-update-date">...fetching commit data...</span></p>
+    </footer>
 
     <script>
         const FOOD_SOURCE_URL = 'foodsource.json';
         
-        // Define ALL possible status states and map them to localization keys for future-proofing
+        // Define ALL possible status states
         const FOOD_STATUS_KEYS = {
             'NEVER_TRIED': 'Never Tried', 
             'DELICIOUS': 'Delicious', 
@@ -61,6 +68,9 @@
          * Initializes the application: loads JSON data and user preferences.
          */
         async function initApp() {
+            const container = document.getElementById('food-container');
+            container.innerHTML = 'Loading food data...'; // Dynamic loading message
+
             try {
                 // 1. Load the JSON file
                 const response = await fetch(FOOD_SOURCE_URL);
@@ -77,8 +87,11 @@
                 
             } catch (error) {
                 console.error("Error loading or processing JSON:", error);
-                document.getElementById('food-container').innerHTML = `<p style="color: red;">Error loading ${FOOD_SOURCE_URL}. Please check the file name and format.</p>`;
+                container.innerHTML = `<p style="color: red;">Error loading ${FOOD_SOURCE_URL}. Please check the file name and format.</p>`;
             }
+
+            // 4. Fetch the last commit date (footer)
+            fetchLastCommitDate();
         }
 
         /**
@@ -88,7 +101,7 @@
             const storedData = localStorage.getItem(DATA_STORAGE_KEY);
             if (storedData) {
                 userPreferences = JSON.parse(storedData);
-                document.getElementById('user-session').textContent = 'Preferences loaded from local storage.';
+                document.getElementById('user-session').textContent = 'Preferences loaded.';
             } else {
                 // Initialize preferences: every item starts as 'Never Tried'
                 foodData.forEach(item => {
@@ -125,10 +138,8 @@
             // Table Body
             foodData.forEach(item => {
                 const name = item.Food_Name;
-                // Ensure item has a preference entry (for robustness), defaulting to 'Never Tried'
                 const prefs = userPreferences[name] || { status: FOOD_STATUS_KEYS.NEVER_TRIED, isFavorite: false, isWorst: false };
                 
-                // Define classes and symbols for tags
                 const favClass = prefs.isFavorite ? ' tag-favorite' : '';
                 const worstClass = prefs.isWorst ? ' tag-worst' : '';
                 
@@ -142,8 +153,6 @@
                     <td>
                         <select class="status-select" onchange="updateFoodStatus('${name}', this.value)">
                             ${STATUS_OPTIONS.map(s => 
-                                // Checks if the current status 's' is the user's saved preference
-                                // If it's the first visit, prefs.status is 'Never Tried'
                                 `<option value="${s}" ${s === prefs.status ? 'selected' : ''}>${s}</option>`
                             ).join('')}
                         </select>
@@ -156,7 +165,7 @@
             });
 
             html += '</tbody></table>';
-            container.innerHTML = html;
+            container.innerHTML = html; // Overwrites the "Loading food data..." message
         }
 
         // --- User Interaction Functions ---
@@ -177,4 +186,72 @@
             userPreferences[foodName][tag] = !userPreferences[foodName][tag];
             saveUserPreferences();
             renderFoodList(); // Re-render to update tag button appearance
-            console.log(`${tag} status for ${foodName}
+            console.log(`${tag} status for ${foodName} toggled.`);
+        }
+        
+        // --- Footer Functions ---
+        
+        /**
+         * Fetches the date of the last commit from the GitHub API.
+         */
+        async function fetchLastCommitDate() {
+            const dateElement = document.getElementById('last-update-date');
+            const repoOwner = 'Crazy-Spy';
+            const repoName = 'EcoFoodCalc';
+            const branchName = 'main'; 
+            const apiURL = `https://api.github.com/repos/${repoOwner}/${repoName}/commits/${branchName}`;
+
+            try {
+                // Check local storage for cached data (using ETag for efficiency)
+                const cachedDate = localStorage.getItem('last-commit-date');
+                const etag = localStorage.getItem('last-commit-etag') || '';
+
+                const response = await fetch(apiURL, {
+                    headers: {
+                        'If-None-Match': etag
+                    }
+                });
+
+                if (response.status === 304) {
+                    // Not Modified: use cached date
+                    if (cachedDate) {
+                        dateElement.textContent = cachedDate;
+                        return;
+                    }
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const lastCommitDate = new Date(data.commit.author.date);
+                
+                // Format: DD/MM/YYYY HH:MM (24h format)
+                const formattedDate = lastCommitDate.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+
+                dateElement.textContent = formattedDate;
+
+                // Save new data to localStorage
+                localStorage.setItem('last-commit-date', formattedDate);
+                localStorage.setItem('last-commit-etag', response.headers.get('ETag'));
+
+            } catch (error) {
+                console.error("Failed to fetch GitHub commit date:", error);
+                dateElement.textContent = 'Error fetching date.';
+            }
+        }
+
+
+        // Initialize the application
+        initApp();
+    </script>
+</body>
+</html>
