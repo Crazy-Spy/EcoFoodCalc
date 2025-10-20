@@ -125,9 +125,10 @@
             // Table Body
             foodData.forEach(item => {
                 const name = item.Food_Name;
-                // Ensure item has a preference entry (for robustness)
+                // Ensure item has a preference entry (for robustness), defaulting to 'Never Tried'
                 const prefs = userPreferences[name] || { status: FOOD_STATUS_KEYS.NEVER_TRIED, isFavorite: false, isWorst: false };
                 
+                // Define classes and symbols for tags
                 const favClass = prefs.isFavorite ? ' tag-favorite' : '';
                 const worstClass = prefs.isWorst ? ' tag-worst' : '';
                 
@@ -140,7 +141,11 @@
                     <td>${item.Official_Calories_Game}</td>
                     <td>
                         <select class="status-select" onchange="updateFoodStatus('${name}', this.value)">
-                            ${STATUS_OPTIONS.map(s => `<option value="${s}" ${s === prefs.status ? 'selected' : ''}>${s}</option>`).join('')}
+                            ${STATUS_OPTIONS.map(s => 
+                                // Checks if the current status 's' is the user's saved preference
+                                // If it's the first visit, prefs.status is 'Never Tried'
+                                `<option value="${s}" ${s === prefs.status ? 'selected' : ''}>${s}</option>`
+                            ).join('')}
                         </select>
                     </td>
                     <td>
