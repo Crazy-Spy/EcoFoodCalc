@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco FoodCalc - Otimizador de Dieta</title>
+    <style>
+        /* Estilos básicos para a tabela */
+        body { font-family: sans-serif; margin: 20px; }
+        .food-list { width: 100%; border-collapse: collapse; }
+        .food-list th, .food-list td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        .food-list th { background-color: #f2f2f2; }
+        /* Estilos para os botões de status (opcional) */
+        .status-button { margin: 2px; padding: 5px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; }
+        .status-Never_Tried { background-color: #eee; }
+        .status-Delicious { background-color: #aaffaa; }
+        .status-Horrible { background-color: #ffaaaa; }
+        .status-favorite { font-weight: bold; color: gold; }
+    </style>
+</head>
+<body>
+
+    <h1>Eco FoodCalc - Otimizador de Dieta</h1>
+    <p>Status atual: <span id="user-session">Carregando...</span></p>
+
+    <div id="food-container">
+        Carregando dados...
+    </div>
+
+    <script>
+        const FOOD_SOURCE_URL = 'foodsource.json';
+        const FOOD_STATES = ['Never Tried', 'Delicious', 'Good', 'Ok', 'Bad', 'Horrible'];
+        const DATA_STORAGE_KEY = 'eco_food_preferences';
+        
+        // Variáveis globais para armazenar os dados e o estado do usuário
+        let foodData = [];
+        let userPreferences = {};
+
+        // Função para carregar os dados JSON e iniciar o app
+        async function initApp() {
+            try {
+                // 1. Carregar o arquivo JSON
+                const response = await fetch(FOOD_SOURCE_URL);
+                foodData = await response.json();
+
+                // 2. Carregar o estado do usuário
+                loadUserPreferences();
+
+                // 3. Renderizar a lista na tela
+                renderFoodList();
+                
+            } catch (error) {
+                console.error("Erro ao carregar ou processar o JSON:", error);
+                document.getElementById('food-container').innerHTML = `<p style="color: red;">Erro ao carregar o arquivo ${FOOD_SOURCE_URL}. Verifique se o nome está correto e se o JSON está bem formatado.</p>`;
+            }
+        }
+
+        // Função para carregar as preferências do usuário (simulação de sessão)
+        function loadUserPreferences() {
+            // Tentamos carregar as preferências do localStorage (simula o cookie)
+            const storedData = localStorage.getItem(DATA_STORAGE_KEY);
+            if (storedData) {
+                userPreferences = JSON.parse(storedData);
+                document.getElementById('user-session').textContent = 'Preferências carregadas.';
+            } else {
+                // Inicializa as preferências (todos os itens como 'Never Tried')
+                foodData.forEach(item => {
+                    const name = item.Food_Name;
+                    userPreferences[name] = {
+                        status: 'Never Tried', // Status inicial, como você pediu
+                        isFavorite: false,
+                        isWorst: false
+                    };
+                });
+                saveUserPreferences();
+                document.getElementById('user-session').textContent = 'Nova sessão iniciada (Todos Never Tried).';
+            }
+        }
+
+        // Função para salvar as preferências
+        function saveUserPreferences() {
+            localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(userPreferences));
+        }
+
+        // Função principal para renderizar a tabela
+        function renderFoodList() {
+            const container = document.getElementById('food-container');
+            let html = '<table class="food-list">';
+            
+            // Cabeçalho da Tabela
+            html += '<thead><tr><th>Comida</th><th>Carbs</th><th>Fat</th><th>Protein</th><th>Vitamins</th><th>Calories</th><th>Status</th><th>Tags</th></tr></thead>';
+            html += '<tbody>';
+
+            // Corpo da Tabela
+            foodData.forEach(item => {
+                const name = item.Food_Name;
+                const prefs = userPreferences[name] || { status: 'Never Tried', isFavorite: false, isWorst: false };
+                const isFav = prefs.isFavorite ? '⭐' : '';
+                const isWorst = prefs.isWorst ? '💩' : '';
+                
+                html += `<tr>
+                    <td>${name}</td>
+                    <td>${item.Carbs}</td>
+                    <td>${item.Fat}</td>
+                    <td>${item.Protein}</td>
+                    <td>${item.Vitamins}</td>
+                    <td>${item.Official_Calories_Game}</td>
+                    <td>
+                        <select onchange="updateFoodStatus('${name}', this.value)">
+                            ${FOOD_STATES.map(s => `<option value="${s}" ${s === prefs.status ? 'selected' : ''}>${s}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td>
+                        <button class="status-button" onclick="toggleTag('${name}', 'isFavorite')">${isFav} Favorite</button>
+                        <button class="status-button" onclick="toggleTag('${name}', 'isWorst')">${isWorst} Worst</button>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Função para atualizar o status (Delicious, Good, etc.)
+        function updateFoodStatus(foodName, newStatus) {
+            userPreferences[foodName].status = newStatus;
+            saveUserPreferences();
+            console.log(`Status de ${foodName} atualizado para ${newStatus}`);
+        }
+
+        // Função para alternar as tags (Favorite/Worst)
+        function toggleTag(foodName, tag) {
+            userPreferences[foodName][tag] = !userPreferences[foodName][tag];
+            saveUserPreferences();
+            renderFoodList(); // Renderiza novamente para atualizar o ícone
+            console.log(`${tag} de ${foodName} atualizado.`);
+        }
+
+        // Inicia o app quando a página carregar
+        initApp();
+    </script>
+</body>
+</html>
