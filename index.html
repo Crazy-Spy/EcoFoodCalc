@@ -28,11 +28,16 @@
         /* Footer Style */
         footer { margin-top: 50px; font-size: 0.8em; color: #666; }
         
-        #food-search-select {
+        #food-search-input {
             padding: 10px;
             font-size: 16px;
             width: 50%;
             margin-top: 10px;
+        }
+        #stomach-size-input {
+            padding: 5px;
+            width: 80px;
+            text-align: right;
         }
     </style>
 </head>
@@ -42,6 +47,11 @@
     
     <p>Current Session Status: <span id="user-session"></span></p> 
     <p>This tool helps maximize your **Nutrition Bonus** for faster skill point gain in Eco.</p>
+    
+    <div style="margin-bottom: 20px;">
+        <label for="stomach-size-input">Stomach Size (Calories): </label>
+        <input type="number" id="stomach-size-input" value="3000" min="100" onchange="updateStomachSize(this.value)">
+    </div>
     
     <div id="food-container"></div> 
 
@@ -53,9 +63,9 @@
     <script>
         const FOOD_SOURCE_URL = 'foodsource.json';
         
-        // Define ALL possible status states
+        // Define ALL possible status states. Renamed 'NEVER_TRIED' to 'REMOVE_FROM_LIST'.
         const FOOD_STATUS_KEYS = {
-            'NEVER_TRIED': 'Never Tried', 
+            'REMOVE_FROM_LIST': 'Remove from list', 
             'DELICIOUS': 'Delicious', 
             'GOOD': 'Good', 
             'OK': 'Ok', 
@@ -65,10 +75,12 @@
 
         const STATUS_OPTIONS = Object.values(FOOD_STATUS_KEYS);
         const DATA_STORAGE_KEY = 'eco_food_preferences';
+        const STOMACH_SIZE_KEY = 'eco_stomach_size';
         
         // Global variables
         let foodData = [];
         let userPreferences = {};
+        let stomachSize = 3000;
 
         // --- Core Functions ---
 
@@ -80,7 +92,7 @@
             const sessionElement = document.getElementById('user-session');
             
             sessionElement.textContent = 'Checking preferences...';
-            container.innerHTML = 'Loading food data...'; // Dynamic loading message
+            container.innerHTML = 'Loading food data...';
 
             try {
                 // 1. Load the JSON file
@@ -90,8 +102,9 @@
                 }
                 foodData = await response.json();
 
-                // 2. Load user preferences or initialize them
+                // 2. Load user preferences and stomach size
                 loadUserPreferences();
+                loadStomachSize();
 
                 // 3. Render the two main components (Evaluated List + Search)
                 renderFoodLists(); 
@@ -107,7 +120,7 @@
         }
 
         /**
-         * Loads preferences from localStorage or sets initial 'Never Tried' status.
+         * Loads preferences from localStorage or sets initial 'Remove from list' status.
          */
         function loadUserPreferences() {
             const storedData = localStorage.getItem(DATA_STORAGE_KEY);
@@ -117,18 +130,30 @@
                 userPreferences = JSON.parse(storedData);
                 sessionElement.textContent = 'Preferences loaded.';
             } else {
-                // Initialize preferences: every item starts as 'Never Tried'
+                // Initialize preferences: every item starts as 'Remove from list'
                 foodData.forEach(item => {
                     const name = item.Food_Name;
                     userPreferences[name] = {
-                        status: FOOD_STATUS_KEYS.NEVER_TRIED, 
+                        status: FOOD_STATUS_KEYS.REMOVE_FROM_LIST, 
                         isFavorite: false,
                         isWorst: false
                     };
                 });
                 saveUserPreferences();
-                sessionElement.textContent = 'New session initialized (All set to Never Tried).';
+                sessionElement.textContent = 'New session initialized (All set to Remove from list).';
             }
+        }
+        
+        /**
+         * Loads the Stomach Size from localStorage or defaults to 3000.
+         */
+        function loadStomachSize() {
+            const storedSize = localStorage.getItem(STOMACH_SIZE_KEY);
+            if (storedSize) {
+                stomachSize = parseInt(storedSize);
+            }
+            // Update the input field with the loaded/default value
+            document.getElementById('stomach-size-input').value = stomachSize;
         }
 
         /**
@@ -137,6 +162,24 @@
         function saveUserPreferences() {
             localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(userPreferences));
         }
+        
+        /**
+         * Saves the Stomach Size to localStorage.
+         */
+        function saveStomachSize() {
+            localStorage.setItem(STOMACH_SIZE_KEY, stomachSize);
+        }
+        
+        /**
+         * Updates the stomach size variable and saves it.
+         */
+        function updateStomachSize(newValue) {
+            stomachSize = parseInt(newValue) || 3000;
+            saveStomachSize();
+            console.log(`Stomach size updated to ${stomachSize} kcal.`);
+            // You might want to re-render the optimization results here later
+        }
+
 
         /**
          * Renders the two main lists: Evaluated Foods Table and Search Box.
@@ -144,15 +187,15 @@
         function renderFoodLists() {
             const container = document.getElementById('food-container');
 
-            // Separa as comidas em avaliadas e não avaliadas
+            // Separa as comidas em avaliadas e não avaliadas (status != REMOVE_FROM_LIST)
             const allFoods = [...foodData];
             const evaluatedFoods = allFoods.filter(item => {
                 const prefs = userPreferences[item.Food_Name];
-                return prefs && prefs.status !== FOOD_STATUS_KEYS.NEVER_TRIED;
+                return prefs && prefs.status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
             });
             const unevaluatedFoods = allFoods.filter(item => {
                 const prefs = userPreferences[item.Food_Name];
-                return !prefs || prefs.status === FOOD_STATUS_KEYS.NEVER_TRIED;
+                return !prefs || prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
             });
             
             // Renderiza o Container Principal
@@ -174,7 +217,7 @@
          */
         function renderEvaluatedTable(foods) {
             if (foods.length === 0) {
-                return '<p>No foods evaluated yet. Use the selector below to add your first item!</p>';
+                return '<p>No foods evaluated yet. Use the search field below to add your first item!</p>';
             }
 
             let tableHtml = '<table class="food-list">';
@@ -214,17 +257,18 @@
         }
 
         /**
-         * Renders the search/selection interface for unevaluated foods.
+         * Renders the search/selection interface (using datalist for type-ahead search).
          */
         function renderSearchInterface(foods) {
-            // Cria a lista de opções (dropdown nativo do HTML para seleção)
-            const options = foods.map(item => `<option value="${item.Food_Name}">${item.Food_Name}</option>`).join('');
+            // Cria a lista de opções para o datalist
+            const options = foods.map(item => `<option value="${item.Food_Name}">`).join('');
             
             let searchHtml = `
-                <select id="food-search-select" onchange="addFoodToEvaluatedList(this.value)">
-                    <option value="" disabled selected>--- Select a food to evaluate (${foods.length} remaining) ---</option>
+                <input list="food-datalist" id="food-search-input" onchange="addFoodToEvaluatedList(this.value)" placeholder="Type or select food name (${foods.length} remaining)" autocomplete="off">
+                <datalist id="food-datalist">
                     ${options}
-                </select>
+                </datalist>
+                <p style="margin-top: 10px; font-size: 0.9em; color: #666;">Note: After typing a name, click outside the box or press Enter to add the food.</p>
             `;
             return searchHtml;
         }
@@ -233,17 +277,26 @@
          * Adds a selected food from the search box to the evaluated list by updating its status.
          */
         function addFoodToEvaluatedList(foodName) {
-            if (!foodName) return;
+            // Encontra o item (case sensitive) e garante que ele existe e ainda não foi avaliado
+            const itemKey = foodData.find(item => item.Food_Name === foodName)?.Food_Name;
+            
+            if (!itemKey) {
+                alert(`Food "${foodName}" not found or already evaluated.`);
+                document.getElementById('food-search-input').value = ""; // Clear input
+                return;
+            }
 
-            // Define o novo status como 'Delicious' (o primeiro da lista não-Never Tried)
+            // Define o novo status como 'Delicious'
             const defaultNewStatus = FOOD_STATUS_KEYS.DELICIOUS;
 
-            // Atualiza a preferência do usuário (tira do Never Tried)
-            userPreferences[foodName].status = defaultNewStatus;
+            // Atualiza a preferência do usuário (tira do Remove from list)
+            userPreferences[itemKey].status = defaultNewStatus;
             
-            // Salva e re-renderiza as duas listas (a comida "salta" de um para o outro)
+            // Salva e re-renderiza as duas listas
             saveUserPreferences();
             renderFoodLists();
+            
+            document.getElementById('food-search-input').value = ""; // Limpa a caixa de busca
         }
 
 
@@ -255,13 +308,13 @@
         function updateFoodStatus(foodName, newStatus) {
             userPreferences[foodName].status = newStatus;
             
-            // Se o status for alterado para ou de Never Tried, precisamos re-renderizar para mover o item entre as listas.
-            const foodAffectsList = newStatus === FOOD_STATUS_KEYS.NEVER_TRIED || 
-                                     userPreferences[foodName].status === FOOD_STATUS_KEYS.NEVER_TRIED;
+            // Se o status for alterado para ou de 'Remove from list', precisamos re-renderizar para mover o item.
+            const shouldRerender = newStatus === FOOD_STATUS_KEYS.REMOVE_FROM_LIST || 
+                                   (userPreferences[foodName].status !== newStatus); // Se o status antigo era REMOVE
 
             saveUserPreferences();
             
-            if (foodAffectsList) {
+            if (shouldRerender) {
                  renderFoodLists(); 
             }
             console.log(`Status of ${foodName} updated to ${newStatus}.`);
@@ -273,7 +326,7 @@
         function toggleTag(foodName, tag) {
             userPreferences[foodName][tag] = !userPreferences[foodName][tag];
             saveUserPreferences();
-            renderFoodLists(); // Re-render to update tag button appearance and possibly sorting/filtering logic later
+            renderFoodLists(); // Re-render to update tag button appearance and lists
             console.log(`${tag} status for ${foodName} toggled.`);
         }
         
