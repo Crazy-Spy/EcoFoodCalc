@@ -220,4 +220,308 @@
          * Saves the Stomach Size to localStorage.
          */
         function saveStomachSize() {
-            localStorage.setItem(STOMACH_SIZE_KEY, stomach
+            localStorage.setItem(STOMACH_SIZE_KEY, stomachSize);
+        }
+        
+        /**
+         * Updates the stomach size variable and saves it.
+         */
+        function updateStomachSize(newValue) {
+            stomachSize = parseInt(newValue) || 3000;
+            saveStomachSize();
+            console.log(`Stomach size updated to ${stomachSize} kcal.`);
+            // Optimization logic re-run will be added here later
+        }
+
+        /**
+         * Saves the global favorite/worst tag to localStorage.
+         */
+        function saveGlobalTag(tagKey, foodName) {
+            localStorage.setItem(tagKey, foodName);
+        }
+
+        /**
+         * Sets a new Favorite or Worst food and re-renders the list.
+         */
+        function setGlobalTag(selectElement, tagType) {
+            const foodName = selectElement.value;
+            
+            if (tagType === 'favorite') {
+                favoriteFood = foodName;
+                saveGlobalTag(FAVORITE_KEY, foodName);
+            } else if (tagType === 'worst') {
+                worstFood = foodName;
+                saveGlobalTag(WORST_KEY, foodName);
+            }
+
+            // Limpa a tag se a opção "--- Select ---" ou "(None)" for escolhida
+            if (!foodName) {
+                if (tagType === 'favorite') favoriteFood = '';
+                if (tagType === 'worst') worstFood = '';
+                saveGlobalTag(tagType === 'favorite' ? FAVORITE_KEY : WORST_KEY, '');
+            }
+
+            // Re-renderizar para atualizar as cores e a outra lista de tags
+            renderFoodLists();
+            console.log(`${tagType} food set to: ${foodName}`);
+        }
+
+
+        /**
+         * Renders the two main lists: Evaluated Foods Table and Search Box.
+         */
+        function renderFoodLists() {
+            const container = document.getElementById('food-container');
+
+            // Separa as comidas em avaliadas e não avaliadas
+            const allFoods = [...foodData];
+            const evaluatedFoods = allFoods.filter(item => {
+                const prefs = userPreferences[item.Food_Name];
+                return prefs && prefs.status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
+            });
+            const unevaluatedFoods = allFoods.filter(item => {
+                const prefs = userPreferences[item.Food_Name];
+                return !prefs || prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
+            });
+            
+            // Renderiza os seletores de Favorite/Worst globais
+            let html = renderGlobalTagSelectors(evaluatedFoods);
+
+            // Tabela de avaliadas
+            html += '<h2>1. Your Evaluated Foods</h2>';
+            html += `<p>Manage the foods you have already tried. (Evaluated Foods: ${evaluatedFoods.length})</p>`;
+            html += renderEvaluatedTable(evaluatedFoods);
+
+            html += '<hr style="margin: 40px 0;">';
+            
+            // Interface de busca
+            html += '<h2>2. Evaluate New Foods</h2>';
+            html += '<p>Search or select a food to add it to your evaluated list and set its status.</p>';
+            html += renderSearchInterface(unevaluatedFoods);
+
+            container.innerHTML = html;
+        }
+
+        /**
+         * Renders the new global Favorite/Worst selectors (Ajuste 2: mantendo o estado).
+         */
+        function renderGlobalTagSelectors(foods) {
+            // Cria as opções (tagOptions) para os dropdowns de Favorite/Worst
+            const tagOptionsHtml = foods.map(item => {
+                const name = item.Food_Name;
+                const isFavSelected = name === favoriteFood;
+                const isWorstSelected = name === worstFood;
+                
+                return `<option value="${name}" ${isFavSelected || isWorstSelected ? 'selected' : ''}>${name}</option>`;
+            }).join('');
+            
+            // Gera as opções HTML completas para os dois dropdowns
+            const generateSelectHtml = (tagType) => {
+                const currentValue = tagType === 'favorite' ? favoriteFood : worstFood;
+                
+                // Lista de opções, garantindo que o item CURRENTLY SELECIONADO seja marcado
+                const options = foods.map(item => {
+                    const name = item.Food_Name;
+                    const isSelected = name === currentValue;
+                    return `<option value="${name}" ${isSelected ? 'selected' : ''}>${name}</option>`;
+                }).join('');
+
+                return `
+                    <select onchange="setGlobalTag(this, '${tagType}')">
+                        <option value="" ${currentValue === '' ? 'selected' : ''}>--- Select ---</option>
+                        ${options}
+                        <option value="" disabled>---</option>
+                        <option value="">(None)</option>
+                    </select>
+                `;
+            };
+
+
+            return `
+                <div id="global-tags-section">
+                    <h3>Global Taste Tags (Single Selection)</h3>
+                    <div id="fav-worst-selects">
+                        <label>Favorite Food (1): ${generateSelectHtml('favorite')}</label>
+                        <label>Worst Food (1): ${generateSelectHtml('worst')}</label>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Renders the table for foods that have an explicit status set.
+         */
+        function renderEvaluatedTable(foods) {
+            if (foods.length === 0) {
+                return '<p>No foods evaluated yet. Use the search field below to add your first item!</p>';
+            }
+
+            let tableHtml = '<table class="food-list">';
+            tableHtml += '<thead><tr><th>Food Name</th><th>Carbs</th><th>Fat</th><th>Protein</th><th>Vitamins</th><th>Calories (Game)</th><th>Status</th></tr></thead>';
+            tableHtml += '<tbody>';
+
+            foods.forEach(item => {
+                const name = item.Food_Name;
+                const prefs = userPreferences[name];
+                
+                // Aplica a classe de destaque (amarelo/vermelho)
+                let rowClass = '';
+                if (name === favoriteFood) {
+                    rowClass = 'row-favorite';
+                } else if (name === worstFood) {
+                    rowClass = 'row-worst';
+                }
+                
+                tableHtml += `<tr class="${rowClass}">
+                    <td>${name}</td>
+                    <td>${item.Carbs}</td>
+                    <td>${item.Fat}</td>
+                    <td>${item.Protein}</td>
+                    <td>${item.Vitamins}</td>
+                    <td>${item.Official_Calories_Game}</td>
+                    <td>
+                        <select class="status-select" onchange="updateFoodStatus('${name}', this.value)">
+                            ${STATUS_OPTIONS.map(s => 
+                                `<option value="${s}" ${s === prefs.status ? 'selected' : ''}>${s}</option>`
+                            ).join('')}
+                        </select>
+                    </td>
+                </tr>`;
+            });
+
+            tableHtml += '</tbody></table>';
+            return tableHtml;
+        }
+
+        /**
+         * Renders the search/selection interface (using datalist for type-ahead search).
+         */
+        function renderSearchInterface(foods) {
+            // Cria a lista de opções para o datalist
+            const options = foods.map(item => `<option value="${item.Food_Name}">`).join('');
+            
+            let searchHtml = `
+                <input list="food-datalist" id="food-search-input" onchange="addFoodToEvaluatedList(this.value)" placeholder="Type or select food name (${foods.length} remaining)" autocomplete="off">
+                <datalist id="food-datalist">
+                    ${options}
+                </datalist>
+                <p style="margin-top: 10px; font-size: 0.9em; color: #666;">Note: After typing a name, click outside the box or press Enter to add the food.</p>
+            `;
+            return searchHtml;
+        }
+        
+        /**
+         * Adds a selected food from the search box to the evaluated list by updating its status.
+         */
+        function addFoodToEvaluatedList(foodName) {
+            // Encontra o item (case sensitive) e garante que ele existe e ainda não foi avaliado
+            const itemKey = foodData.find(item => item.Food_Name === foodName)?.Food_Name;
+            
+            if (!itemKey || userPreferences[itemKey].status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST) {
+                alert(`Food "${foodName}" not found or already evaluated.`);
+                document.getElementById('food-search-input').value = ""; // Clear input
+                return;
+            }
+
+            // Define o novo status como 'Delicious'
+            const defaultNewStatus = FOOD_STATUS_KEYS.DELICIOUS;
+
+            // Atualiza a preferência do usuário (tira do Remove from list)
+            userPreferences[itemKey].status = defaultNewStatus;
+            
+            // Salva e re-renderiza as duas listas (a comida "salta" de um para o outro)
+            saveUserPreferences();
+            renderFoodLists();
+            
+            document.getElementById('food-search-input').value = ""; // Limpa a caixa de busca
+        }
+
+
+        // --- User Interaction Functions ---
+
+        /**
+         * Updates the status (Delicious, Good, etc.) for a food item and re-renders if needed.
+         */
+        function updateFoodStatus(foodName, newStatus) {
+            userPreferences[foodName].status = newStatus;
+            
+            // Se o status for alterado para ou de 'Remove from list', precisamos re-renderizar para mover o item.
+            const shouldRerender = newStatus === FOOD_STATUS_KEYS.REMOVE_FROM_LIST || 
+                                   (userPreferences[foodName].status !== newStatus); 
+
+            saveUserPreferences();
+            
+            if (shouldRerender) {
+                 renderFoodLists(); 
+            }
+            console.log(`Status of ${foodName} updated to ${newStatus}.`);
+        }
+        
+        // --- Footer Functions ---
+        
+        /**
+         * Fetches the date of the last commit from the GitHub API.
+         */
+        async function fetchLastCommitDate() {
+            const dateElement = document.getElementById('last-update-date');
+            dateElement.textContent = 'fetching commit data...'; // Dynamic loading
+
+            const repoOwner = 'Crazy-Spy';
+            const repoName = 'EcoFoodCalc';
+            const branchName = 'main'; 
+            const apiURL = `https://api.github.com/repos/${repoOwner}/${repoName}/commits/${branchName}`;
+
+            try {
+                // Check local storage for cached data (using ETag for efficiency)
+                const cachedDate = localStorage.getItem('last-commit-date');
+                const etag = localStorage.getItem('last-commit-etag') || '';
+
+                const response = await fetch(apiURL, {
+                    headers: {
+                        'If-None-Match': etag
+                    }
+                });
+
+                if (response.status === 304) {
+                    // Not Modified: use cached date
+                    if (cachedDate) {
+                        dateElement.textContent = cachedDate;
+                        return;
+                    }
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const lastCommitDate = new Date(data.commit.author.date);
+                
+                // Format: DD/MM/YYYY HH:MM (24h format)
+                const formattedDate = lastCommitDate.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+
+                dateElement.textContent = formattedDate;
+
+                // Save new data to localStorage
+                localStorage.setItem('last-commit-date', formattedDate);
+                localStorage.setItem('last-commit-etag', response.headers.get('ETag'));
+
+            } catch (error) {
+                console.error("Failed to fetch GitHub commit date:", error);
+                dateElement.textContent = 'Error fetching date.';
+            }
+        }
+
+
+        // Initialize the application
+        initApp();
+    </script>
+</body>
+</html>
