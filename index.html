@@ -7,31 +7,30 @@
     <style>
         /* Basic Styles */
         body { font-family: sans-serif; margin: 20px; }
-        h1 { color: #333; }
+        h1 { color: #333; display: inline-block; margin: 0; }
+        
+        /* Version Top Right */
+        #version-display { float: right; font-size: 0.9em; color: #555; }
+        
         .food-list { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .food-list th, .food-list td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         .food-list th { background-color: #f2f2f2; }
         
+        /* Highlighting Rows */
+        .row-favorite { background-color: #fffacd; /* Light Yellow */ }
+        .row-worst { background-color: #ffcccc; /* Light Red */ }
+        
         /* Status and Tag Styles */
         .status-select { padding: 5px; border-radius: 4px; }
-        .tag-button { 
-            margin: 2px; 
-            padding: 5px 10px; 
-            cursor: pointer; 
-            border: 1px solid #aaa; 
-            border-radius: 4px;
-            background-color: #e9e9e9;
-        }
-        .tag-favorite { background-color: #ffd700; border-color: gold; font-weight: bold; }
-        .tag-worst { background-color: #ffb6c1; border-color: #f08080; }
 
         /* Footer Style */
         footer { margin-top: 50px; font-size: 0.8em; color: #666; }
         
-        #food-search-input {
+        #food-search-input, #fav-worst-selects select {
             padding: 10px;
             font-size: 16px;
-            width: 50%;
+            width: 48%; /* Adjust for side-by-side elements */
+            box-sizing: border-box;
             margin-top: 10px;
         }
         #stomach-size-input {
@@ -39,10 +38,20 @@
             width: 80px;
             text-align: right;
         }
+        #fav-worst-selects {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
 
+    <div id="version-display">
+        Version 0.1<br>
+        Last update: <span id="last-update-date"></span>
+    </div>
+    
     <h1>Eco FoodCalc - Diet Optimizer</h1>
     
     <p>Current Session Status: <span id="user-session"></span></p> 
@@ -59,7 +68,7 @@
 
     <footer>
         <hr>
-        <p>Created by CrazySpy - Version 0.1 - Last update: <span id="last-update-date"></span></p>
+        <p>Created by CrazySpy.</p>
     </footer>
 
     <script>
@@ -78,11 +87,15 @@
         const STATUS_OPTIONS = Object.values(FOOD_STATUS_KEYS);
         const DATA_STORAGE_KEY = 'eco_food_preferences';
         const STOMACH_SIZE_KEY = 'eco_stomach_size';
+        const FAVORITE_KEY = 'eco_favorite_food'; // Novo para controle global
+        const WORST_KEY = 'eco_worst_food'; // Novo para controle global
         
         // Global variables
         let foodData = [];
         let userPreferences = {};
         let stomachSize = 3000;
+        let favoriteFood = ''; // Nome da comida favorita
+        let worstFood = '';    // Nome da comida pior
 
         // --- Core Functions ---
 
@@ -104,9 +117,10 @@
                 }
                 foodData = await response.json();
 
-                // 2. Load user preferences and stomach size
+                // 2. Load user preferences, stomach size, and global tags
                 loadUserPreferences();
                 loadStomachSize();
+                loadGlobalTags();
 
                 // 3. Render the two main components (Evaluated List + Search)
                 renderFoodLists(); 
@@ -117,9 +131,24 @@
                 sessionElement.textContent = 'Failed to start session.';
             }
 
-            // 4. Fetch the last commit date (footer)
+            // 4. Fetch the last commit date (footer/header)
             fetchLastCommitDate();
         }
+
+        /**
+         * Loads global tags (Favorite/Worst) from localStorage.
+         */
+        function loadGlobalTags() {
+            favoriteFood = localStorage.getItem(FAVORITE_KEY) || '';
+            worstFood = localStorage.getItem(WORST_KEY) || '';
+        }
+        
+        // Função loadUserPreferences, saveUserPreferences, loadStomachSize, saveStomachSize, updateStomachSize mantidas.
+        // ... (As funções load/save/update do seu código anterior)
+
+        // As Funções loadUserPreferences, saveUserPreferences, loadStomachSize, saveStomachSize, updateStomachSize e resetPreferences
+        // são mantidas do seu código anterior, mas foram adicionadas as novas loadGlobalTags e saveGlobalTags.
+        // Por brevidade, vamos focar nas funções que mudaram radicalmente:
 
         /**
          * Loads preferences from localStorage or sets initial 'Remove from list' status.
@@ -137,15 +166,20 @@
                     const name = item.Food_Name;
                     userPreferences[name] = {
                         status: FOOD_STATUS_KEYS.REMOVE_FROM_LIST, 
-                        isFavorite: false,
-                        isWorst: false
                     };
                 });
                 saveUserPreferences();
                 sessionElement.textContent = 'New session initialized (All set to Remove from list).';
             }
         }
-        
+
+        /**
+         * Saves current user preferences to localStorage.
+         */
+        function saveUserPreferences() {
+            localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(userPreferences));
+        }
+
         /**
          * Clears all saved data (preferences and stomach size) and reloads the app.
          */
@@ -153,14 +187,16 @@
             if (confirm('Are you sure you want to delete ALL saved preferences (food status, tags, and stomach size)? This action cannot be undone.')) {
                 localStorage.removeItem(DATA_STORAGE_KEY);
                 localStorage.removeItem(STOMACH_SIZE_KEY);
-                localStorage.removeItem('last-commit-date'); // Limpa cache da data do commit também
+                localStorage.removeItem(FAVORITE_KEY); // Remove tags globais
+                localStorage.removeItem(WORST_KEY);     // Remove tags globais
+                localStorage.removeItem('last-commit-date'); 
                 localStorage.removeItem('last-commit-etag');
                 
                 // Recarrega o app para iniciar do zero
                 window.location.reload();
             }
         }
-        
+
         /**
          * Loads the Stomach Size from localStorage or defaults to 3000.
          */
@@ -174,13 +210,6 @@
             if(inputElement) inputElement.value = stomachSize;
         }
 
-        /**
-         * Saves current user preferences to localStorage.
-         */
-        function saveUserPreferences() {
-            localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(userPreferences));
-        }
-        
         /**
          * Saves the Stomach Size to localStorage.
          */
@@ -198,6 +227,32 @@
             // Optimization logic re-run will be added here later
         }
 
+        /**
+         * Saves the global favorite/worst tag to localStorage.
+         */
+        function saveGlobalTag(tagKey, foodName) {
+            localStorage.setItem(tagKey, foodName);
+        }
+
+        /**
+         * Sets a new Favorite or Worst food and re-renders the list.
+         */
+        function setGlobalTag(selectElement, tagType) {
+            const foodName = selectElement.value;
+            
+            if (tagType === 'favorite') {
+                favoriteFood = foodName;
+                saveGlobalTag(FAVORITE_KEY, foodName);
+            } else if (tagType === 'worst') {
+                worstFood = foodName;
+                saveGlobalTag(WORST_KEY, foodName);
+            }
+
+            // Re-renderizar para atualizar as cores e a outra lista de tags
+            renderFoodLists();
+            console.log(`${tagType} food set to: ${foodName}`);
+        }
+
 
         /**
          * Renders the two main lists: Evaluated Foods Table and Search Box.
@@ -205,7 +260,7 @@
         function renderFoodLists() {
             const container = document.getElementById('food-container');
 
-            // Separa as comidas em avaliadas e não avaliadas (status != REMOVE_FROM_LIST)
+            // Separa as comidas em avaliadas e não avaliadas
             const allFoods = [...foodData];
             const evaluatedFoods = allFoods.filter(item => {
                 const prefs = userPreferences[item.Food_Name];
@@ -216,18 +271,53 @@
                 return !prefs || prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
             });
             
-            // Renderiza o Container Principal
-            let html = '<h2>1. Your Evaluated Foods</h2>';
-            html += '<p>Manage the foods you have already tried and set their taste status and tags. (Evaluated Foods: ' + evaluatedFoods.length + ')</p>';
+            // Renderiza os seletores de Favorite/Worst globais (NOVO)
+            let html = renderGlobalTagSelectors(evaluatedFoods);
+
+            // Tabela de avaliadas
+            html += '<h2>1. Your Evaluated Foods</h2>';
+            html += `<p>Manage the foods you have already tried. (Evaluated Foods: ${evaluatedFoods.length})</p>`;
             html += renderEvaluatedTable(evaluatedFoods);
 
             html += '<hr style="margin: 40px 0;">';
             
+            // Interface de busca
             html += '<h2>2. Evaluate New Foods</h2>';
             html += '<p>Search or select a food to add it to your evaluated list and set its status.</p>';
             html += renderSearchInterface(unevaluatedFoods);
 
             container.innerHTML = html;
+        }
+
+        /**
+         * Renders the new global Favorite/Worst selectors.
+         */
+        function renderGlobalTagSelectors(foods) {
+            // Adiciona a opção "--- Select ---" e as comidas avaliadas
+            const tagOptions = foods.map(item => `<option value="${item.Food_Name}">${item.Food_Name}</option>`).join('');
+
+            return `
+                <h3>Global Taste Tags (Single Selection)</h3>
+                <div id="fav-worst-selects">
+                    <label>Favorite Food (1):
+                        <select onchange="setGlobalTag(this, 'favorite')">
+                            <option value="">--- Select ---</option>
+                            ${tagOptions}
+                            <option value="" disabled>---</option>
+                            <option value="">(None)</option>
+                        </select>
+                    </label>
+                    
+                    <label>Worst Food (1):
+                        <select onchange="setGlobalTag(this, 'worst')">
+                            <option value="">--- Select ---</option>
+                            ${tagOptions}
+                            <option value="" disabled>---</option>
+                            <option value="">(None)</option>
+                        </select>
+                    </label>
+                </div>
+            `;
         }
 
         /**
@@ -239,17 +329,22 @@
             }
 
             let tableHtml = '<table class="food-list">';
-            tableHtml += '<thead><tr><th>Food Name</th><th>Carbs</th><th>Fat</th><th>Protein</th><th>Vitamins</th><th>Calories (Game)</th><th>Status</th><th>Tags</th></tr></thead>';
+            tableHtml += '<thead><tr><th>Food Name</th><th>Carbs</th><th>Fat</th><th>Protein</th><th>Vitamins</th><th>Calories (Game)</th><th>Status</th></tr></thead>';
             tableHtml += '<tbody>';
 
             foods.forEach(item => {
                 const name = item.Food_Name;
                 const prefs = userPreferences[name];
                 
-                const favClass = prefs.isFavorite ? ' tag-favorite' : '';
-                const worstClass = prefs.isWorst ? ' tag-worst' : '';
+                // NOVO: Aplica a classe de destaque (amarelo/vermelho)
+                let rowClass = '';
+                if (name === favoriteFood) {
+                    rowClass = 'row-favorite';
+                } else if (name === worstFood) {
+                    rowClass = 'row-worst';
+                }
                 
-                tableHtml += `<tr>
+                tableHtml += `<tr class="${rowClass}">
                     <td>${name}</td>
                     <td>${item.Carbs}</td>
                     <td>${item.Fat}</td>
@@ -263,16 +358,17 @@
                             ).join('')}
                         </select>
                     </td>
-                    <td>
-                        <button class="tag-button${favClass}" onclick="toggleTag('${name}', 'isFavorite')">${prefs.isFavorite ? '★' : '☆'} Favorite</button>
-                        <button class="tag-button${worstClass}" onclick="toggleTag('${name}', 'isWorst')">${prefs.isWorst ? '☠' : '⛌'} Worst</button>
-                    </td>
                 </tr>`;
             });
 
             tableHtml += '</tbody></table>';
             return tableHtml;
         }
+
+        // As Funções addFoodToEvaluatedList, updateFoodStatus, e fetchLastCommitDate são mantidas.
+        // A função toggleTag foi REMOVIDA, pois as tags agora são globais.
+
+        // ... (Código das funções addFoodToEvaluatedList, updateFoodStatus, e fetchLastCommitDate)
 
         /**
          * Renders the search/selection interface (using datalist for type-ahead search).
@@ -318,8 +414,6 @@
         }
 
 
-        // --- User Interaction Functions ---
-
         /**
          * Updates the status (Delicious, Good, etc.) for a food item and re-renders if needed.
          */
@@ -337,16 +431,8 @@
             }
             console.log(`Status of ${foodName} updated to ${newStatus}.`);
         }
-
-        /**
-         * Toggles the Favorite or Worst tag for a food item and re-renders.
-         */
-        function toggleTag(foodName, tag) {
-            userPreferences[foodName][tag] = !userPreferences[foodName][tag];
-            saveUserPreferences();
-            renderFoodLists(); // Re-render to update tag button appearance and lists
-            console.log(`${tag} status for ${foodName} toggled.`);
-        }
+        
+        // --- A função toggleTag foi removida, pois as tags são globais e controladas por setGlobalTag ---
         
         // --- Footer Functions ---
         
