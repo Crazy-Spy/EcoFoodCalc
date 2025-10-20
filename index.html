@@ -46,6 +46,8 @@
     <h1>Eco FoodCalc - Diet Optimizer</h1>
     
     <p>Current Session Status: <span id="user-session"></span></p> 
+    <button onclick="resetPreferences()" style="padding: 5px 10px; background-color: #f44336; color: white; border: none; cursor: pointer; border-radius: 4px;">Reset All Preferences</button>
+    
     <p>This tool helps maximize your **Nutrition Bonus** for faster skill point gain in Eco.</p>
     
     <div style="margin-bottom: 20px;">
@@ -63,7 +65,7 @@
     <script>
         const FOOD_SOURCE_URL = 'foodsource.json';
         
-        // Define ALL possible status states. Renamed 'NEVER_TRIED' to 'REMOVE_FROM_LIST'.
+        // Define ALL possible status states.
         const FOOD_STATUS_KEYS = {
             'REMOVE_FROM_LIST': 'Remove from list', 
             'DELICIOUS': 'Delicious', 
@@ -92,7 +94,7 @@
             const sessionElement = document.getElementById('user-session');
             
             sessionElement.textContent = 'Checking preferences...';
-            container.innerHTML = 'Loading food data...';
+            container.innerHTML = 'Loading food data...'; // Dynamic loading message
 
             try {
                 // 1. Load the JSON file
@@ -145,6 +147,21 @@
         }
         
         /**
+         * Clears all saved data (preferences and stomach size) and reloads the app.
+         */
+        function resetPreferences() {
+            if (confirm('Are you sure you want to delete ALL saved preferences (food status, tags, and stomach size)? This action cannot be undone.')) {
+                localStorage.removeItem(DATA_STORAGE_KEY);
+                localStorage.removeItem(STOMACH_SIZE_KEY);
+                localStorage.removeItem('last-commit-date'); // Limpa cache da data do commit também
+                localStorage.removeItem('last-commit-etag');
+                
+                // Recarrega o app para iniciar do zero
+                window.location.reload();
+            }
+        }
+        
+        /**
          * Loads the Stomach Size from localStorage or defaults to 3000.
          */
         function loadStomachSize() {
@@ -153,7 +170,8 @@
                 stomachSize = parseInt(storedSize);
             }
             // Update the input field with the loaded/default value
-            document.getElementById('stomach-size-input').value = stomachSize;
+            const inputElement = document.getElementById('stomach-size-input');
+            if(inputElement) inputElement.value = stomachSize;
         }
 
         /**
@@ -177,7 +195,7 @@
             stomachSize = parseInt(newValue) || 3000;
             saveStomachSize();
             console.log(`Stomach size updated to ${stomachSize} kcal.`);
-            // You might want to re-render the optimization results here later
+            // Optimization logic re-run will be added here later
         }
 
 
@@ -292,7 +310,7 @@
             // Atualiza a preferência do usuário (tira do Remove from list)
             userPreferences[itemKey].status = defaultNewStatus;
             
-            // Salva e re-renderiza as duas listas
+            // Salva e re-renderiza as duas listas (a comida "salta" de um para o outro)
             saveUserPreferences();
             renderFoodLists();
             
