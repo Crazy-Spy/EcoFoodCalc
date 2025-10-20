@@ -27,6 +27,13 @@
 
         /* Footer Style */
         footer { margin-top: 50px; font-size: 0.8em; color: #666; }
+        
+        #food-search-select {
+            padding: 10px;
+            font-size: 16px;
+            width: 50%;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -86,8 +93,8 @@
                 // 2. Load user preferences or initialize them
                 loadUserPreferences();
 
-                // 3. Render the list
-                renderFoodList();
+                // 3. Render the two main components (Evaluated List + Search)
+                renderFoodLists(); 
                 
             } catch (error) {
                 console.error("Error loading or processing JSON:", error);
@@ -132,25 +139,56 @@
         }
 
         /**
-         * Renders the main food list table.
+         * Renders the two main lists: Evaluated Foods Table and Search Box.
          */
-        function renderFoodList() {
+        function renderFoodLists() {
             const container = document.getElementById('food-container');
-            let html = '<table class="food-list">';
-            
-            // Table Header
-            html += '<thead><tr><th>Food Name</th><th>Carbs</th><th>Fat</th><th>Protein</th><th>Vitamins</th><th>Calories (Game)</th><th>Status</th><th>Tags</th></tr></thead>';
-            html += '<tbody>';
 
-            // Table Body
-            foodData.forEach(item => {
+            // Separa as comidas em avaliadas e não avaliadas
+            const allFoods = [...foodData];
+            const evaluatedFoods = allFoods.filter(item => {
+                const prefs = userPreferences[item.Food_Name];
+                return prefs && prefs.status !== FOOD_STATUS_KEYS.NEVER_TRIED;
+            });
+            const unevaluatedFoods = allFoods.filter(item => {
+                const prefs = userPreferences[item.Food_Name];
+                return !prefs || prefs.status === FOOD_STATUS_KEYS.NEVER_TRIED;
+            });
+            
+            // Renderiza o Container Principal
+            let html = '<h2>1. Your Evaluated Foods</h2>';
+            html += '<p>Manage the foods you have already tried and set their taste status and tags. (Evaluated Foods: ' + evaluatedFoods.length + ')</p>';
+            html += renderEvaluatedTable(evaluatedFoods);
+
+            html += '<hr style="margin: 40px 0;">';
+            
+            html += '<h2>2. Evaluate New Foods</h2>';
+            html += '<p>Search or select a food to add it to your evaluated list and set its status.</p>';
+            html += renderSearchInterface(unevaluatedFoods);
+
+            container.innerHTML = html;
+        }
+
+        /**
+         * Renders the table for foods that have an explicit status set.
+         */
+        function renderEvaluatedTable(foods) {
+            if (foods.length === 0) {
+                return '<p>No foods evaluated yet. Use the selector below to add your first item!</p>';
+            }
+
+            let tableHtml = '<table class="food-list">';
+            tableHtml += '<thead><tr><th>Food Name</th><th>Carbs</th><th>Fat</th><th>Protein</th><th>Vitamins</th><th>Calories (Game)</th><th>Status</th><th>Tags</th></tr></thead>';
+            tableHtml += '<tbody>';
+
+            foods.forEach(item => {
                 const name = item.Food_Name;
-                const prefs = userPreferences[name] || { status: FOOD_STATUS_KEYS.NEVER_TRIED, isFavorite: false, isWorst: false };
+                const prefs = userPreferences[name];
                 
                 const favClass = prefs.isFavorite ? ' tag-favorite' : '';
                 const worstClass = prefs.isWorst ? ' tag-worst' : '';
                 
-                html += `<tr>
+                tableHtml += `<tr>
                     <td>${name}</td>
                     <td>${item.Carbs}</td>
                     <td>${item.Fat}</td>
@@ -171,28 +209,71 @@
                 </tr>`;
             });
 
-            html += '</tbody></table>';
-            container.innerHTML = html; // Overwrites the "Loading food data..." message
+            tableHtml += '</tbody></table>';
+            return tableHtml;
         }
+
+        /**
+         * Renders the search/selection interface for unevaluated foods.
+         */
+        function renderSearchInterface(foods) {
+            // Cria a lista de opções (dropdown nativo do HTML para seleção)
+            const options = foods.map(item => `<option value="${item.Food_Name}">${item.Food_Name}</option>`).join('');
+            
+            let searchHtml = `
+                <select id="food-search-select" onchange="addFoodToEvaluatedList(this.value)">
+                    <option value="" disabled selected>--- Select a food to evaluate (${foods.length} remaining) ---</option>
+                    ${options}
+                </select>
+            `;
+            return searchHtml;
+        }
+        
+        /**
+         * Adds a selected food from the search box to the evaluated list by updating its status.
+         */
+        function addFoodToEvaluatedList(foodName) {
+            if (!foodName) return;
+
+            // Define o novo status como 'Delicious' (o primeiro da lista não-Never Tried)
+            const defaultNewStatus = FOOD_STATUS_KEYS.DELICIOUS;
+
+            // Atualiza a preferência do usuário (tira do Never Tried)
+            userPreferences[foodName].status = defaultNewStatus;
+            
+            // Salva e re-renderiza as duas listas (a comida "salta" de um para o outro)
+            saveUserPreferences();
+            renderFoodLists();
+        }
+
 
         // --- User Interaction Functions ---
 
         /**
-         * Updates the status (Delicious, Good, etc.) for a food item.
+         * Updates the status (Delicious, Good, etc.) for a food item and re-renders if needed.
          */
         function updateFoodStatus(foodName, newStatus) {
             userPreferences[foodName].status = newStatus;
+            
+            // Se o status for alterado para ou de Never Tried, precisamos re-renderizar para mover o item entre as listas.
+            const foodAffectsList = newStatus === FOOD_STATUS_KEYS.NEVER_TRIED || 
+                                     userPreferences[foodName].status === FOOD_STATUS_KEYS.NEVER_TRIED;
+
             saveUserPreferences();
-            console.log(`Status of ${foodName} updated to ${newStatus}`);
+            
+            if (foodAffectsList) {
+                 renderFoodLists(); 
+            }
+            console.log(`Status of ${foodName} updated to ${newStatus}.`);
         }
 
         /**
-         * Toggles the Favorite or Worst tag for a food item.
+         * Toggles the Favorite or Worst tag for a food item and re-renders.
          */
         function toggleTag(foodName, tag) {
             userPreferences[foodName][tag] = !userPreferences[foodName][tag];
             saveUserPreferences();
-            renderFoodList(); // Re-render to update tag button appearance
+            renderFoodLists(); // Re-render to update tag button appearance and possibly sorting/filtering logic later
             console.log(`${tag} status for ${foodName} toggled.`);
         }
         
