@@ -1,0 +1,1930 @@
+[
+    {
+        "Food_Name": "StuffedTurkey",
+        "Carbs": 17,
+        "Fat": 16,
+        "Protein": 24,
+        "Vitamins": 7,
+        "Official_Calories_Game": 1600
+    },
+    {
+        "Food_Name": "BanhXeo",
+        "Carbs": 26,
+        "Fat": 10,
+        "Protein": 17,
+        "Vitamins": 4,
+        "Official_Calories_Game": 1550
+    },
+    {
+        "Food_Name": "Ecoylent",
+        "Carbs": 500,
+        "Fat": 500,
+        "Protein": 500,
+        "Vitamins": 500,
+        "Official_Calories_Game": 1500
+    },
+    {
+        "Food_Name": "ElkWellington",
+        "Carbs": 10,
+        "Fat": 22,
+        "Protein": 26,
+        "Vitamins": 4,
+        "Official_Calories_Game": 1450
+    },
+    {
+        "Food_Name": "BisonChowFun",
+        "Carbs": 16,
+        "Fat": 20,
+        "Protein": 13,
+        "Vitamins": 8,
+        "Official_Calories_Game": 1450
+    },
+    {
+        "Food_Name": "SharkFilletSoup",
+        "Carbs": 10,
+        "Fat": 11,
+        "Protein": 15,
+        "Vitamins": 4,
+        "Official_Calories_Game": 1400
+    },
+    {
+        "Food_Name": "SeededCamasRoll",
+        "Carbs": 20,
+        "Fat": 13,
+        "Protein": 2,
+        "Vitamins": 16,
+        "Official_Calories_Game": 1400
+    },
+    {
+        "Food_Name": "RoastPumpkin",
+        "Carbs": 23,
+        "Fat": 2,
+        "Protein": 2,
+        "Vitamins": 7,
+        "Official_Calories_Game": 1400
+    },
+    {
+        "Food_Name": "KelpyCrabRoll",
+        "Carbs": 22,
+        "Fat": 11,
+        "Protein": 13,
+        "Vitamins": 5,
+        "Official_Calories_Game": 1350
+    },
+    {
+        "Food_Name": "MeatPie",
+        "Carbs": 18,
+        "Fat": 20,
+        "Protein": 4,
+        "Vitamins": 2,
+        "Official_Calories_Game": 1300
+    },
+    {
+        "Food_Name": "SpikyRoll",
+        "Carbs": 20,
+        "Fat": 7,
+        "Protein": 17,
+        "Vitamins": 2,
+        "Official_Calories_Game": 1300
+    },
+    {
+        "Food_Name": "HuckleberryPie",
+        "Carbs": 13,
+        "Fat": 10,
+        "Protein": 5,
+        "Vitamins": 16,
+        "Official_Calories_Game": 1300
+    },
+    {
+        "Food_Name": "BearSUPREME",
+        "Carbs": 6,
+        "Fat": 23,
+        "Protein": 22,
+        "Vitamins": 9,
+        "Official_Calories_Game": 1250
+    },
+    {
+        "Food_Name": "FantasticForestPizza",
+        "Carbs": 23,
+        "Fat": 10,
+        "Protein": 4,
+        "Vitamins": 17,
+        "Official_Calories_Game": 1250
+    },
+    {
+        "Food_Name": "LoadedTaroFries",
+        "Carbs": 14,
+        "Fat": 18,
+        "Protein": 6,
+        "Vitamins": 0,
+        "Official_Calories_Game": 1200
+    },
+    {
+        "Food_Name": "SmoothGutNoodleRoll",
+        "Carbs": 19,
+        "Fat": 9,
+        "Protein": 15,
+        "Vitamins": 1,
+        "Official_Calories_Game": 1200
+    },
+    {
+        "Food_Name": "TastyTropicalPizza",
+        "Carbs": 21,
+        "Fat": 12,
+        "Protein": 6,
+        "Vitamins": 11,
+        "Official_Calories_Game": 1200
+    },
+    {
+        "Food_Name": "CampfireStew",
+        "Carbs": 5,
+        "Fat": 9,
+        "Protein": 10,
+        "Vitamins": 4,
+        "Official_Calories_Game": 1200
+    },
+    {
+        "Food_Name": "CrimsonSalad",
+        "Carbs": 13,
+        "Fat": 8,
+        "Protein": 7,
+        "Vitamins": 28,
+        "Official_Calories_Game": 1200
+    },
+    {
+        "Food_Name": "HeartyHometownPizza",
+        "Carbs": 28,
+        "Fat": 11,
+        "Protein": 7,
+        "Vitamins": 3,
+        "Official_Calories_Game": 1200
+    },
+    {
+        "Food_Name": "VegetableSoup",
+        "Carbs": 12,
+        "Fat": 7,
+        "Protein": 4,
+        "Vitamins": 19,
+        "Official_Calories_Game": 1200
+    },
+    {
+        "Food_Name": "SensuousSeaPizza",
+        "Carbs": 28,
+        "Fat": 7,
+        "Protein": 11,
+        "Vitamins": 4,
+        "Official_Calories_Game": 1200
+    },
+    {
+        "Food_Name": "SweetSalad",
+        "Carbs": 18,
+        "Fat": 7,
+        "Protein": 9,
+        "Vitamins": 22,
+        "Official_Calories_Game": 1200
+    },
+    {
+        "Food_Name": "PhadThai",
+        "Carbs": 9,
+        "Fat": 19,
+        "Protein": 11,
+        "Vitamins": 5,
+        "Official_Calories_Game": 1200
+    },
+    {
+        "Food_Name": "AutumnStew",
+        "Carbs": 13,
+        "Fat": 5,
+        "Protein": 8,
+        "Vitamins": 12,
+        "Official_Calories_Game": 1200
+    },
+    {
+        "Food_Name": "PokeBowl",
+        "Carbs": 21,
+        "Fat": 11,
+        "Protein": 10,
+        "Vitamins": 7,
+        "Official_Calories_Game": 1100
+    },
+    {
+        "Food_Name": "FieldCampfireStew",
+        "Carbs": 14,
+        "Fat": 8,
+        "Protein": 4,
+        "Vitamins": 4,
+        "Official_Calories_Game": 1100
+    },
+    {
+        "Food_Name": "MeatyStew",
+        "Carbs": 6,
+        "Fat": 10,
+        "Protein": 13,
+        "Vitamins": 1,
+        "Official_Calories_Game": 1100
+    },
+    {
+        "Food_Name": "JungleCampfireStew",
+        "Carbs": 8,
+        "Fat": 11,
+        "Protein": 8,
+        "Vitamins": 3,
+        "Official_Calories_Game": 1100
+    },
+    {
+        "Food_Name": "RootCampfireStew",
+        "Carbs": 8,
+        "Fat": 12,
+        "Protein": 5,
+        "Vitamins": 5,
+        "Official_Calories_Game": 1100
+    },
+    {
+        "Food_Name": "WildStew",
+        "Carbs": 10,
+        "Fat": 6,
+        "Protein": 2,
+        "Vitamins": 12,
+        "Official_Calories_Game": 1100
+    },
+    {
+        "Food_Name": "BakedRoast",
+        "Carbs": 4,
+        "Fat": 10,
+        "Protein": 16,
+        "Vitamins": 4,
+        "Official_Calories_Game": 1000
+    },
+    {
+        "Food_Name": "Macarons",
+        "Carbs": 20,
+        "Fat": 14,
+        "Protein": 7,
+        "Vitamins": 16,
+        "Official_Calories_Game": 1000
+    },
+    {
+        "Food_Name": "CampfireRoast",
+        "Carbs": 0,
+        "Fat": 12,
+        "Protein": 16,
+        "Vitamins": 0,
+        "Official_Calories_Game": 1000
+    },
+    {
+        "Food_Name": "MillionairesSalad",
+        "Carbs": 18,
+        "Fat": 6,
+        "Protein": 6,
+        "Vitamins": 26,
+        "Official_Calories_Game": 1000
+    },
+    {
+        "Food_Name": "FishNChips",
+        "Carbs": 20,
+        "Fat": 20,
+        "Protein": 10,
+        "Vitamins": 0,
+        "Official_Calories_Game": 1000
+    },
+    {
+        "Food_Name": "RootCampfireSalad",
+        "Carbs": 8,
+        "Fat": 4,
+        "Protein": 5,
+        "Vitamins": 11,
+        "Official_Calories_Game": 950
+    },
+    {
+        "Food_Name": "SimmeredMeat",
+        "Carbs": 6,
+        "Fat": 13,
+        "Protein": 18,
+        "Vitamins": 5,
+        "Official_Calories_Game": 900
+    },
+    {
+        "Food_Name": "VegetableMedley",
+        "Carbs": 8,
+        "Fat": 7,
+        "Protein": 4,
+        "Vitamins": 17,
+        "Official_Calories_Game": 900
+    },
+    {
+        "Food_Name": "FernCampfireSalad",
+        "Carbs": 9,
+        "Fat": 1,
+        "Protein": 5,
+        "Vitamins": 13,
+        "Official_Calories_Game": 900
+    },
+    {
+        "Food_Name": "BeetCampfireSalad",
+        "Carbs": 8,
+        "Fat": 3,
+        "Protein": 4,
+        "Vitamins": 13,
+        "Official_Calories_Game": 900
+    },
+    {
+        "Food_Name": "FruitSalad",
+        "Carbs": 12,
+        "Fat": 3,
+        "Protein": 4,
+        "Vitamins": 19,
+        "Official_Calories_Game": 900
+    },
+    {
+        "Food_Name": "Pupusas",
+        "Carbs": 6,
+        "Fat": 9,
+        "Protein": 11,
+        "Vitamins": 14,
+        "Official_Calories_Game": 900
+    },
+    {
+        "Food_Name": "JungleCampfireSalad",
+        "Carbs": 11,
+        "Fat": 3,
+        "Protein": 4,
+        "Vitamins": 10,
+        "Official_Calories_Game": 900
+    },
+    {
+        "Food_Name": "HuckleberryFritter",
+        "Carbs": 16,
+        "Fat": 20,
+        "Protein": 0,
+        "Vitamins": 8,
+        "Official_Calories_Game": 900
+    },
+    {
+        "Food_Name": "Pirozhok",
+        "Carbs": 14,
+        "Fat": 10,
+        "Protein": 19,
+        "Vitamins": 4,
+        "Official_Calories_Game": 850
+    },
+    {
+        "Food_Name": "Bearclaw",
+        "Carbs": 14,
+        "Fat": 21,
+        "Protein": 4,
+        "Vitamins": 7,
+        "Official_Calories_Game": 850
+    },
+    {
+        "Food_Name": "FruitTart",
+        "Carbs": 22,
+        "Fat": 9,
+        "Protein": 3,
+        "Vitamins": 14,
+        "Official_Calories_Game": 800
+    },
+    {
+        "Food_Name": "CrispyBacon",
+        "Carbs": 0,
+        "Fat": 26,
+        "Protein": 18,
+        "Vitamins": 0,
+        "Official_Calories_Game": 800
+    },
+    {
+        "Food_Name": "ClamChowder",
+        "Carbs": 16,
+        "Fat": 3,
+        "Protein": 15,
+        "Vitamins": 11,
+        "Official_Calories_Game": 800
+    },
+    {
+        "Food_Name": "FruitMuffin",
+        "Carbs": 10,
+        "Fat": 4,
+        "Protein": 5,
+        "Vitamins": 16,
+        "Official_Calories_Game": 800
+    },
+    {
+        "Food_Name": "CamasBread",
+        "Carbs": 13,
+        "Fat": 11,
+        "Protein": 5,
+        "Vitamins": 7,
+        "Official_Calories_Game": 800
+    },
+    {
+        "Food_Name": "AgoutiEnchiladas",
+        "Carbs": 20,
+        "Fat": 27,
+        "Protein": 8,
+        "Vitamins": 3,
+        "Official_Calories_Game": 800
+    },
+    {
+        "Food_Name": "WildMix",
+        "Carbs": 15,
+        "Fat": 4,
+        "Protein": 6,
+        "Vitamins": 21,
+        "Official_Calories_Game": 800
+    },
+    {
+        "Food_Name": "BasicSalad",
+        "Carbs": 18,
+        "Fat": 4,
+        "Protein": 6,
+        "Vitamins": 10,
+        "Official_Calories_Game": 800
+    },
+    {
+        "Food_Name": "Mochi",
+        "Carbs": 25,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 5,
+        "Official_Calories_Game": 750
+    },
+    {
+        "Food_Name": "WorldlyDonut",
+        "Carbs": 15,
+        "Fat": 17,
+        "Protein": 2,
+        "Vitamins": 2,
+        "Official_Calories_Game": 750
+    },
+    {
+        "Food_Name": "FriedHareHaunches",
+        "Carbs": 6,
+        "Fat": 27,
+        "Protein": 15,
+        "Vitamins": 4,
+        "Official_Calories_Game": 750
+    },
+    {
+        "Food_Name": "Bread",
+        "Carbs": 23,
+        "Fat": 4,
+        "Protein": 6,
+        "Vitamins": 2,
+        "Official_Calories_Game": 750
+    },
+    {
+        "Food_Name": "PineappleFriendRice",
+        "Carbs": 20,
+        "Fat": 12,
+        "Protein": 9,
+        "Vitamins": 12,
+        "Official_Calories_Game": 720
+    },
+    {
+        "Food_Name": "CamasBulbBake",
+        "Carbs": 12,
+        "Fat": 5,
+        "Protein": 7,
+        "Vitamins": 4,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "Hosomaki",
+        "Carbs": 21,
+        "Fat": 5,
+        "Protein": 19,
+        "Vitamins": 8,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "BakedTaro",
+        "Carbs": 8,
+        "Fat": 2,
+        "Protein": 6,
+        "Vitamins": 12,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "Bannock",
+        "Carbs": 15,
+        "Fat": 6,
+        "Protein": 3,
+        "Vitamins": 0,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "FriedTomatoes",
+        "Carbs": 11,
+        "Fat": 8,
+        "Protein": 3,
+        "Vitamins": 2,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "FriedTaro",
+        "Carbs": 14,
+        "Fat": 8,
+        "Protein": 1,
+        "Vitamins": 1,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "FriedHeartsOfPalm",
+        "Carbs": 13,
+        "Fat": 6,
+        "Protein": 3,
+        "Vitamins": 2,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "FriedFiddleheads",
+        "Carbs": 11,
+        "Fat": 6,
+        "Protein": 3,
+        "Vitamins": 4,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "FriedCamas",
+        "Carbs": 9,
+        "Fat": 10,
+        "Protein": 3,
+        "Vitamins": 2,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "ToppedPorridge",
+        "Carbs": 10,
+        "Fat": 0,
+        "Protein": 4,
+        "Vitamins": 10,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "BakedTomato",
+        "Carbs": 16,
+        "Fat": 5,
+        "Protein": 1,
+        "Vitamins": 6,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "BakedMeat",
+        "Carbs": 0,
+        "Fat": 13,
+        "Protein": 17,
+        "Vitamins": 0,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "BakedHeartOfPalm",
+        "Carbs": 12,
+        "Fat": 4,
+        "Protein": 6,
+        "Vitamins": 6,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "VegetableStock",
+        "Carbs": 11,
+        "Fat": 2,
+        "Protein": 1,
+        "Vitamins": 11,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "BakedCorn",
+        "Carbs": 12,
+        "Fat": 2,
+        "Protein": 3,
+        "Vitamins": 11,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "ElkTaco",
+        "Carbs": 15,
+        "Fat": 22,
+        "Protein": 8,
+        "Vitamins": 6,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "CharredSausage",
+        "Carbs": 0,
+        "Fat": 14,
+        "Protein": 10,
+        "Vitamins": 0,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "BakedAgave",
+        "Carbs": 14,
+        "Fat": 4,
+        "Protein": 2,
+        "Vitamins": 8,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "BakedBeet",
+        "Carbs": 10,
+        "Fat": 2,
+        "Protein": 1,
+        "Vitamins": 15,
+        "Official_Calories_Game": 700
+    },
+    {
+        "Food_Name": "PreparedMeat",
+        "Carbs": 0,
+        "Fat": 6,
+        "Protein": 4,
+        "Vitamins": 0,
+        "Official_Calories_Game": 600
+    },
+    {
+        "Food_Name": "SearedMeat",
+        "Carbs": 4,
+        "Fat": 17,
+        "Protein": 19,
+        "Vitamins": 7,
+        "Official_Calories_Game": 600
+    },
+    {
+        "Food_Name": "BoiledSausage",
+        "Carbs": 0,
+        "Fat": 22,
+        "Protein": 27,
+        "Vitamins": 0,
+        "Official_Calories_Game": 600
+    },
+    {
+        "Food_Name": "MeatStock",
+        "Carbs": 3,
+        "Fat": 9,
+        "Protein": 8,
+        "Vitamins": 0,
+        "Official_Calories_Game": 600
+    },
+    {
+        "Food_Name": "SweetDeerJerky",
+        "Carbs": 4,
+        "Fat": 6,
+        "Protein": 22,
+        "Vitamins": 3,
+        "Official_Calories_Game": 600
+    },
+    {
+        "Food_Name": "TaroFries",
+        "Carbs": 10,
+        "Fat": 20,
+        "Protein": 2,
+        "Vitamins": 0,
+        "Official_Calories_Game": 600
+    },
+    {
+        "Food_Name": "RawRoast",
+        "Carbs": 0,
+        "Fat": 5,
+        "Protein": 6,
+        "Vitamins": 0,
+        "Official_Calories_Game": 600
+    },
+    {
+        "Food_Name": "PrimeCut",
+        "Carbs": 0,
+        "Fat": 4,
+        "Protein": 9,
+        "Vitamins": 0,
+        "Official_Calories_Game": 600
+    },
+    {
+        "Food_Name": "FriedVegetables",
+        "Carbs": 11,
+        "Fat": 8,
+        "Protein": 3,
+        "Vitamins": 2,
+        "Official_Calories_Game": 560
+    },
+    {
+        "Food_Name": "DriedMeat",
+        "Carbs": 1,
+        "Fat": 4,
+        "Protein": 14,
+        "Vitamins": 0,
+        "Official_Calories_Game": 550
+    },
+    {
+        "Food_Name": "CornFritters",
+        "Carbs": 13,
+        "Fat": 22,
+        "Protein": 4,
+        "Vitamins": 8,
+        "Official_Calories_Game": 500
+    },
+    {
+        "Food_Name": "Flatbread",
+        "Carbs": 17,
+        "Fat": 3,
+        "Protein": 8,
+        "Vitamins": 2,
+        "Official_Calories_Game": 500
+    },
+    {
+        "Food_Name": "RawSausage",
+        "Carbs": 0,
+        "Fat": 8,
+        "Protein": 4,
+        "Vitamins": 0,
+        "Official_Calories_Game": 500
+    },
+    {
+        "Food_Name": "DriedFish",
+        "Carbs": 1,
+        "Fat": 2,
+        "Protein": 16,
+        "Vitamins": 0,
+        "Official_Calories_Game": 450
+    },
+    {
+        "Food_Name": "CharredMeat",
+        "Carbs": 0,
+        "Fat": 10,
+        "Protein": 5,
+        "Vitamins": 0,
+        "Official_Calories_Game": 400
+    },
+    {
+        "Food_Name": "CharredFish",
+        "Carbs": 0,
+        "Fat": 4,
+        "Protein": 11,
+        "Vitamins": 0,
+        "Official_Calories_Game": 400
+    },
+    {
+        "Food_Name": "SimpleSyrup",
+        "Carbs": 12,
+        "Fat": 3,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 400
+    },
+    {
+        "Food_Name": "WiltedFiddleheads",
+        "Carbs": 4,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 7,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "BoiledGrains",
+        "Carbs": 9,
+        "Fat": 0,
+        "Protein": 2,
+        "Vitamins": 1,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "CharredTomato",
+        "Carbs": 7,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 4,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "CharredAgave",
+        "Carbs": 5,
+        "Fat": 3,
+        "Protein": 1,
+        "Vitamins": 3,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "CharredPapaya",
+        "Carbs": 3,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 8,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "Tortilla",
+        "Carbs": 20,
+        "Fat": 0,
+        "Protein": 10,
+        "Vitamins": 0,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "CharredBeet",
+        "Carbs": 3,
+        "Fat": 3,
+        "Protein": 0,
+        "Vitamins": 6,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "CharredBeans",
+        "Carbs": 1,
+        "Fat": 3,
+        "Protein": 8,
+        "Vitamins": 0,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "CharredCorn",
+        "Carbs": 7,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 4,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "CharredFireweedShoots",
+        "Carbs": 5,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 6,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "CharredMushrooms",
+        "Carbs": 3,
+        "Fat": 2,
+        "Protein": 6,
+        "Vitamins": 1,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "CharredCamasBulb",
+        "Carbs": 2,
+        "Fat": 6,
+        "Protein": 3,
+        "Vitamins": 1,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "CharredPineapple",
+        "Carbs": 8,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 3,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "CharredTaro",
+        "Carbs": 10,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 1,
+        "Official_Calories_Game": 350
+    },
+    {
+        "Food_Name": "Pumpkin",
+        "Carbs": 5,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 2,
+        "Official_Calories_Game": 340
+    },
+    {
+        "Food_Name": "SunCheese",
+        "Carbs": 2,
+        "Fat": 12,
+        "Protein": 4,
+        "Vitamins": 0,
+        "Official_Calories_Game": 250
+    },
+    {
+        "Food_Name": "RawMeat",
+        "Carbs": 0,
+        "Fat": 8,
+        "Protein": 4,
+        "Vitamins": 0,
+        "Official_Calories_Game": 250
+    },
+    {
+        "Food_Name": "TaroRoot",
+        "Carbs": 6,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 1,
+        "Official_Calories_Game": 250
+    },
+    {
+        "Food_Name": "Tomato",
+        "Carbs": 5,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 2,
+        "Official_Calories_Game": 240
+    },
+    {
+        "Food_Name": "Corn",
+        "Carbs": 4,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 3,
+        "Official_Calories_Game": 230
+    },
+    {
+        "Food_Name": "Beet",
+        "Carbs": 2,
+        "Fat": 2,
+        "Protein": 0,
+        "Vitamins": 4,
+        "Official_Calories_Game": 230
+    },
+    {
+        "Food_Name": "CharredHeartOfPalm",
+        "Carbs": 6,
+        "Fat": 1,
+        "Protein": 3,
+        "Vitamins": 2,
+        "Official_Calories_Game": 210
+    },
+    {
+        "Food_Name": "BoiledRice",
+        "Carbs": 13,
+        "Fat": 0,
+        "Protein": 2,
+        "Vitamins": 0,
+        "Official_Calories_Game": 210
+    },
+    {
+        "Food_Name": "CriminiMushrooms",
+        "Carbs": 2,
+        "Fat": 1,
+        "Protein": 4,
+        "Vitamins": 1,
+        "Official_Calories_Game": 200
+    },
+    {
+        "Food_Name": "CharredCactusFruit",
+        "Carbs": 4,
+        "Fat": 2,
+        "Protein": 0,
+        "Vitamins": 6,
+        "Official_Calories_Game": 200
+    },
+    {
+        "Food_Name": "RawFish",
+        "Carbs": 0,
+        "Fat": 3,
+        "Protein": 7,
+        "Vitamins": 0,
+        "Official_Calories_Game": 200
+    },
+    {
+        "Food_Name": "RawBacon",
+        "Carbs": 0,
+        "Fat": 9,
+        "Protein": 3,
+        "Vitamins": 0,
+        "Official_Calories_Game": 200
+    },
+    {
+        "Food_Name": "CookeinaMushrooms",
+        "Carbs": 2,
+        "Fat": 1,
+        "Protein": 4,
+        "Vitamins": 1,
+        "Official_Calories_Game": 200
+    },
+    {
+        "Food_Name": "RiceNoodles",
+        "Carbs": 10,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 200
+    },
+    {
+        "Food_Name": "AgaveLeaves",
+        "Carbs": 2,
+        "Fat": 1,
+        "Protein": 1,
+        "Vitamins": 4,
+        "Official_Calories_Game": 200
+    },
+    {
+        "Food_Name": "Tallow",
+        "Carbs": 0,
+        "Fat": 8,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 200
+    },
+    {
+        "Food_Name": "Pineapple",
+        "Carbs": 6,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 2,
+        "Official_Calories_Game": 200
+    },
+    {
+        "Food_Name": "Papaya",
+        "Carbs": 2,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 5,
+        "Official_Calories_Game": 200
+    },
+    {
+        "Food_Name": "BoleteMushrooms",
+        "Carbs": 2,
+        "Fat": 1,
+        "Protein": 4,
+        "Vitamins": 1,
+        "Official_Calories_Game": 200
+    },
+    {
+        "Food_Name": "PricklyPearFruit",
+        "Carbs": 2,
+        "Fat": 1,
+        "Protein": 1,
+        "Vitamins": 4,
+        "Official_Calories_Game": 190
+    },
+    {
+        "Food_Name": "Fiddleheads",
+        "Carbs": 2,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 5,
+        "Official_Calories_Game": 150
+    },
+    {
+        "Food_Name": "Huckleberries",
+        "Carbs": 2,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 6,
+        "Official_Calories_Game": 150
+    },
+    {
+        "Food_Name": "Wheat",
+        "Carbs": 6,
+        "Fat": 0,
+        "Protein": 2,
+        "Vitamins": 0,
+        "Official_Calories_Game": 150
+    },
+    {
+        "Food_Name": "FireweedShoots",
+        "Carbs": 3,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 4,
+        "Official_Calories_Game": 150
+    },
+    {
+        "Food_Name": "FlaxseedOil",
+        "Carbs": 0,
+        "Fat": 15,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 120
+    },
+    {
+        "Food_Name": "Oil",
+        "Carbs": 0,
+        "Fat": 15,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 120
+    },
+    {
+        "Food_Name": "Milk",
+        "Carbs": 3,
+        "Fat": 7,
+        "Protein": 10,
+        "Vitamins": 0,
+        "Official_Calories_Game": 120
+    },
+    {
+        "Food_Name": "InfusedOil",
+        "Carbs": 0,
+        "Fat": 12,
+        "Protein": 0,
+        "Vitamins": 3,
+        "Official_Calories_Game": 120
+    },
+    {
+        "Food_Name": "GiantCactusFruit",
+        "Carbs": 2,
+        "Fat": 2,
+        "Protein": 0,
+        "Vitamins": 4,
+        "Official_Calories_Game": 100
+    },
+    {
+        "Food_Name": "HeartOfPalm",
+        "Carbs": 4,
+        "Fat": 0,
+        "Protein": 2,
+        "Vitamins": 2,
+        "Official_Calories_Game": 100
+    },
+    {
+        "Food_Name": "BeanSprout",
+        "Carbs": 2,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 5,
+        "Official_Calories_Game": 100
+    },
+    {
+        "Food_Name": "BeetGreens",
+        "Carbs": 3,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 4,
+        "Official_Calories_Game": 100
+    },
+    {
+        "Food_Name": "Yeast",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 8,
+        "Vitamins": 7,
+        "Official_Calories_Game": 60
+    },
+    {
+        "Food_Name": "HuckleberryExtract",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 15,
+        "Official_Calories_Game": 60
+    },
+    {
+        "Food_Name": "CamasPaste",
+        "Carbs": 4,
+        "Fat": 0,
+        "Protein": 1,
+        "Vitamins": 2,
+        "Official_Calories_Game": 50
+    },
+    {
+        "Food_Name": "RiceFlour",
+        "Carbs": 15,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 50
+    },
+    {
+        "Food_Name": "Flour",
+        "Carbs": 15,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 50
+    },
+    {
+        "Food_Name": "AcornPowder",
+        "Carbs": 1,
+        "Fat": 2,
+        "Protein": 5,
+        "Vitamins": 5,
+        "Official_Calories_Game": 40
+    },
+    {
+        "Food_Name": "BeanPaste",
+        "Carbs": 3,
+        "Fat": 7,
+        "Protein": 5,
+        "Vitamins": 0,
+        "Official_Calories_Game": 40
+    },
+    {
+        "Food_Name": "FruitPaste",
+        "Carbs": 5,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 8,
+        "Official_Calories_Game": 40
+    },
+    {
+        "Food_Name": "WheatSeedCultivated",
+        "Carbs": 4,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "TaroSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "TomatoSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "SugarBeetSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "RiceSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "RiceFlourSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "PumpkinSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "PricklyPearSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "HuckleberrySeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "GiantPumpkinSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "FiddleheadSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "FireweedSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "FernSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "CornSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "CocoaSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "CamasSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "BeetSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "AgaveSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "AcornSeedCultivated",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "WheatSeed",
+        "Carbs": 4,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "TaroSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "TomatoSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "SugarBeetSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "RiceSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "RiceFlourSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "PumpkinSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "PricklyPearSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "HuckleberrySeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "GiantPumpkinSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "FiddleheadSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "FireweedSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "FernSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "CornSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "CocoaSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "CamasSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "BeetSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "AgaveSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "AcornSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "BlueSharkSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "ClamSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "CrabsSeed",
+        "Carbs": 1,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 20
+    },
+    {
+        "Food_Name": "PastryDough",
+        "Carbs": 4,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 4,
+        "Official_Calories_Game": 10
+    },
+    {
+        "Food_Name": "Maltodextrin",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "LiquidNitrogen",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "Orchid",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "BirchLog",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "HardwoodLog",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "CedarLog",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "SoftwoodLog",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RedwoodLog",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "OakLog",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "SmallWoodLog",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "Granite",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "Shale",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "Sandstone",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "Basalt",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "Clay",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "IronOre",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "GoldOre",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "CopperOre",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "Coal",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "Rock",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "Stone",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "Dirt",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "Tailings",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "Sand",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "AmanitaMushrooms",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawLamb",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawBisonMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawCougarMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawElkMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawJaguarMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawWolfMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawTurkeyMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawBoarMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawSmallMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawLargeMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawFoxMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawDeerMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawAgoutiMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawBearMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawHareMeat",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawSeaBass",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawTrout",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawCod",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawTuna",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawSalmon",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawBlueShark",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawClam",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    },
+    {
+        "Food_Name": "RawCrab",
+        "Carbs": 0,
+        "Fat": 0,
+        "Protein": 0,
+        "Vitamins": 0,
+        "Official_Calories_Game": 0
+    }
+]
