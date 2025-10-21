@@ -96,7 +96,7 @@
             border-radius: 50%;
             overflow: hidden;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            background: #fff; /* Default white background */
+            background: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -203,7 +203,7 @@
          * Updates the stomach size variable and saves it.
          */
         function updateStomachSize(newValue) {
-            stomachSize = parseInt(newValue) || STOMACH_SIZE_DEFAULT;
+            stomachSize = parseInt(newValue) || 3000;
             saveStomachSize();
             renderFoodLists();
         }
@@ -257,12 +257,11 @@
             } else {
                 calculateSuggestedDiet();
                 const evaluatedFoods = foodData.filter(item => userPreferences[item.Food_Name] && userPreferences[item.Food_Name].status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST);
-                // Re-renderiza a tabela avaliada sem re-renderizar a página inteira
                 const evaluatedTableContainer = document.querySelector('#food-container .food-list');
                 if (evaluatedTableContainer) {
                     evaluatedTableContainer.outerHTML = renderEvaluatedTable(evaluatedFoods);
                 } else {
-                    renderFoodLists(); // Fallback
+                    renderFoodLists(); 
                 }
             }
         }
@@ -288,7 +287,7 @@
             
             document.getElementById('food-search-input').value = "";
         }
-
+        
         // --- Core Helper Functions (Load/Save Data) ---
 
         /**
@@ -350,7 +349,17 @@
         function saveStomachSize() {
             localStorage.setItem(STOMACH_SIZE_KEY, stomachSize);
         }
-        
+
+        /**
+         * Loads the state of the strict taste toggle.
+         */
+        function loadStrictTastePreference() {
+            const storedStrict = localStorage.getItem(STRICT_TASTE_KEY);
+            if (storedStrict !== null) {
+                strictTasteMode = storedStrict === 'true';
+            }
+        }
+
         // --- Algorithmic Core (The Real Deal) ---
 
         /**
@@ -384,20 +393,14 @@
             const gradientParts = [];
             
             data.forEach(slice => {
-                // Adiciona a cor e o ponto onde a cor começa
                 gradientParts.push(`${slice.color} ${currentPercentage.toFixed(2)}%`);
-                // Atualiza a porcentagem acumulada
                 currentPercentage += slice.percent;
-                // Adiciona a cor e o ponto onde a cor termina (próxima cor começa aqui)
                 gradientParts.push(`${slice.color} ${currentPercentage.toFixed(2)}%`);
             });
 
-            // Remove o último ponto de repetição (o final do último slice)
             gradientParts.pop(); 
-            
             const gradientString = gradientParts.join(', ');
 
-            // Aplica o gradiente cônico ao container
             chartContainer.style.background = `conic-gradient(${gradientString})`;
             
             const balanceModifier = calculateBalanceModifier(analysis);
@@ -407,10 +410,9 @@
                 <strong>${balanceModifier}</strong>
             </div>`;
 
-            // Renderiza a legenda separada na lista de sugestão
+            // Renderiza a legenda separada
             document.getElementById('suggested-foods-list').querySelector('h4').textContent = `Suggested Meal Plan: ${balanceModifier}`;
             
-            // Re-renderiza a legenda (se a div for substituída, a legenda deve ser anexada novamente)
             const legendHtml = `
                 <div id="pie-legend">
                     <ul style="list-style-type: none; padding: 0; margin-top: 20px; font-size: 0.9em;">
@@ -423,7 +425,6 @@
                     </ul>
                 </div>
             `;
-            // Anexa a legenda após a lista de comidas sugeridas (que está na função calculateSuggestedDiet)
             document.getElementById('suggested-foods-list').innerHTML += legendHtml;
         }
 
@@ -558,7 +559,7 @@
                          return false;
                     }
                 } else {
-                    // Mesmo com o modo relaxado, HORRIBLE ainda é banido pela regra anterior.
+                    // Mesmo com o modo relaxado, HORRIBLE é banido
                     if (prefs.status === FOOD_STATUS_KEYS.HORRIBLE) {
                          return false;
                     }
@@ -574,6 +575,7 @@
 
             if (availableFoods.length === 0) {
                 listContainer.innerHTML = '<p style="color: red;">No suitable foods available based on your current evaluation.</p>';
+                chartContainer.style.background = '#fff';
                 chartContainer.innerHTML = '';
                 return;
             }
