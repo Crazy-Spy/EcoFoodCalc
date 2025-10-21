@@ -90,7 +90,15 @@
             min-width: 50%;
         }
         #nutrition-pie-chart-container {
-            width: 300px; /* Ajustado para melhor visualização */
+            width: 200px; /* Reduzido para o círculo */
+            height: 200px;
+            position: relative;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #pie-legend {
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -114,6 +122,12 @@
     </div>
     
     <h2>Suggested Diet Optimization</h2>
+    <div style="margin-bottom: 20px;">
+        <label>
+            <input type="checkbox" id="strict-taste-toggle" checked onchange="saveStrictTastePreference(this.checked)">
+            Exclude Bad and Horrible foods from diet suggestion.
+        </label>
+    </div>
     <div id="diet-suggestion-container">
         <div id="suggested-foods-list">
             <p>Processing optimization algorithm...</p>
@@ -132,6 +146,7 @@
 
     <script>
         const FOOD_SOURCE_URL = 'foodsource.json';
+        const STOMACH_SIZE_DEFAULT = 3000;
         
         // Define ALL possible status states.
         const FOOD_STATUS_KEYS = {
@@ -157,15 +172,16 @@
         const STOMACH_SIZE_KEY = 'eco_stomach_size';
         const FAVORITE_KEY = 'eco_favorite_food';
         const WORST_KEY = 'eco_worst_food';
+        const STRICT_TASTE_KEY = 'eco_strict_taste'; // Novo para o toggle
         
         // Global variables
         let foodData = [];
         let userPreferences = {};
-        let stomachSize = 3000;
+        let stomachSize = STOMACH_SIZE_DEFAULT;
         let favoriteFood = '';
         let worstFood = '';
-
-        // Elementos da UI (variáveis para serem usadas em várias funções)
+        let strictTasteMode = true; // Novo: Padrão é TRUE
+        
         const sessionElement = document.getElementById('user-session');
         const container = document.getElementById('food-container');
 
@@ -177,12 +193,7 @@
          */
         function resetPreferences() {
             if (confirm('Are you sure you want to delete ALL saved preferences (food status, tags, and stomach size)? This action cannot be undone.')) {
-                localStorage.removeItem(DATA_STORAGE_KEY);
-                localStorage.removeItem(STOMACH_SIZE_KEY);
-                localStorage.removeItem(FAVORITE_KEY); 
-                localStorage.removeItem(WORST_KEY);     
-                localStorage.removeItem('last-commit-date'); 
-                localStorage.removeItem('last-commit-etag');
+                localStorage.clear(); // Limpa tudo que for nosso
                 
                 // Recarrega o app para iniciar do zero
                 window.location.reload();
@@ -193,10 +204,20 @@
          * Updates the stomach size variable and saves it.
          */
         function updateStomachSize(newValue) {
-            stomachSize = parseInt(newValue) || 3000;
+            stomachSize = parseInt(newValue) || STOMACH_SIZE_DEFAULT;
             saveStomachSize();
             console.log(`Stomach size updated to ${stomachSize} kcal.`);
-            renderFoodLists(); // Re-render para atualizar a sugestão
+            renderFoodLists(); 
+        }
+
+        /**
+         * Saves the state of the strict taste toggle.
+         */
+        function saveStrictTastePreference(isChecked) {
+            strictTasteMode = isChecked;
+            localStorage.setItem(STRICT_TASTE_KEY, isChecked);
+            renderFoodLists();
+            console.log(`Strict taste mode set to: ${strictTasteMode}`);
         }
 
         /**
@@ -220,7 +241,6 @@
                 saveGlobalTag(tagType === 'favorite' ? FAVORITE_KEY : WORST_KEY, '');
             }
 
-            // Re-renderizar para atualizar as cores e a outra lista de tags
             renderFoodLists();
             console.log(`${tagType} food set to: ${foodName}`);
         }
@@ -241,9 +261,8 @@
             if (isMovingList) {
                  renderFoodLists(); 
             } else {
-                // Se o item não saiu da lista, apenas recalcula a dieta
+                // Se o item não saiu da lista, apenas recalcula a dieta e atualiza a tabela avaliada
                 calculateSuggestedDiet();
-                // E re-renderiza a tabela avaliada para atualizar o destaque de atenção se necessário
                 const evaluatedFoods = foodData.filter(item => userPreferences[item.Food_Name] && userPreferences[item.Food_Name].status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST);
                 document.getElementById('food-container').querySelector('.food-list').outerHTML = renderEvaluatedTable(evaluatedFoods);
             }
@@ -253,7 +272,6 @@
          * Adds a selected food from the search box to the evaluated list by updating its status.
          */
         function addFoodToEvaluatedList(foodName) {
-            // Encontra o item (case sensitive) e garante que ele existe e ainda não foi avaliado
             const itemKey = foodData.find(item => item.Food_Name === foodName)?.Food_Name;
             
             if (!itemKey || userPreferences[itemKey].status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST) {
@@ -262,41 +280,18 @@
                 return;
             }
 
-            // NOVO STATUS PADRÃO: SELECT_STATUS
             const defaultNewStatus = FOOD_STATUS_KEYS.SELECT_STATUS; 
 
-            // Atualiza a preferência do usuário (tira do Remove from list)
             userPreferences[itemKey].status = defaultNewStatus;
             
-            // Salva e re-renderiza as duas listas (a comida "salta" de um para o outro)
             saveUserPreferences();
             renderFoodLists();
             
-            document.getElementById('food-search-input').value = ""; // Limpa a caixa de busca
+            document.getElementById('food-search-input').value = "";
         }
 
-        /**
-         * Loads preferences from localStorage or sets initial 'Remove from list' status.
-         */
-        function loadUserPreferences() {
-            const storedData = localStorage.getItem(DATA_STORAGE_KEY);
-
-            if (storedData) {
-                userPreferences = JSON.parse(storedData);
-                sessionElement.textContent = 'Preferences loaded.';
-            } else {
-                // Initialize preferences: every item starts as 'Remove from list'
-                foodData.forEach(item => {
-                    const name = item.Food_Name;
-                    userPreferences[name] = {
-                        status: FOOD_STATUS_KEYS.REMOVE_FROM_LIST, 
-                    };
-                });
-                saveUserPreferences();
-                sessionElement.textContent = 'New session initialized (All set to Remove from list).';
-            }
-        }
-
+        // --- Core Helper Functions ---
+        
         /**
          * Saves current user preferences to localStorage.
          */
@@ -305,11 +300,10 @@
         }
 
         /**
-         * Loads global tags (Favorite/Worst) from localStorage.
+         * Saves the Stomach Size to localStorage.
          */
-        function loadGlobalTags() {
-            favoriteFood = localStorage.getItem(FAVORITE_KEY) || '';
-            worstFood = localStorage.getItem(WORST_KEY) || '';
+        function saveStomachSize() {
+            localStorage.setItem(STOMACH_SIZE_KEY, stomachSize);
         }
         
         /**
@@ -318,27 +312,7 @@
         function saveGlobalTag(tagKey, foodName) {
             localStorage.setItem(tagKey, foodName);
         }
-
-        /**
-         * Loads the Stomach Size from localStorage or defaults to 3000.
-         */
-        function loadStomachSize() {
-            const storedSize = localStorage.getItem(STOMACH_SIZE_KEY);
-            if (storedSize) {
-                stomachSize = parseInt(storedSize);
-            }
-            // Update the input field with the loaded/default value
-            const inputElement = document.getElementById('stomach-size-input');
-            if(inputElement) inputElement.value = stomachSize;
-        }
-
-        /**
-         * Saves the Stomach Size to localStorage.
-         */
-        function saveStomachSize() {
-            localStorage.setItem(STOMACH_SIZE_KEY, stomachSize);
-        }
-
+        
         // --- Algorithmic Core (The Real Deal) ---
 
         /**
@@ -346,19 +320,16 @@
          */
         function calculateBalanceModifier(analysis) {
              const nutrients = [analysis.Carbs, analysis.Fat, analysis.Protein, analysis.Vitamins];
-             // Implementação de desvio padrão simplificada
              const avg = 25;
              const variance = nutrients.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / 4;
              const stdDev = Math.sqrt(variance);
              
-             // Fator de balanceamento simplificado: quanto menor o desvio, mais perto de 2.0x
-             // (Esta é uma aproximação que faremos correta na próxima etapa!)
              let modifier = 2.0 - (stdDev / 10);
              if (modifier < 0.5) modifier = 0.5;
              
              return `${modifier.toFixed(2)}x`;
         }
-
+        
         /**
          * Renders the nutrient distribution legend/analysis.
          */
@@ -369,126 +340,168 @@
                 { label: 'Fat', percent: analysis.Fat, color: PIE_COLORS.Fat },
                 { label: 'Protein', percent: analysis.Protein, color: PIE_COLORS.Protein },
                 { label: 'Vitamins', percent: analysis.Vitamins, color: PIE_COLORS.Vitamins }
-            ];
+            ].sort((a, b) => b.percent - a.percent); // Ordena decrescente para renderização do gradiente
+
+            let currentPercentage = 0;
+            const gradientParts = [];
+            
+            data.forEach(slice => {
+                // Adiciona a cor e o ponto onde a cor começa
+                gradientParts.push(`${slice.color} ${currentPercentage.toFixed(2)}%`);
+                // Adiciona a cor e o ponto onde a cor termina (próxima cor começa aqui)
+                currentPercentage += slice.percent;
+                gradientParts.push(`${slice.color} ${currentPercentage.toFixed(2)}%`);
+            });
+
+            // Remove o último ponto de repetição
+            gradientParts.pop(); 
+            
+            const gradientString = gradientParts.join(', ');
+
+            chartContainer.style.background = `conic-gradient(${gradientString})`;
             
             const balanceModifier = calculateBalanceModifier(analysis);
 
-            chartContainer.innerHTML = `
-                <h4 style="text-align: center;">Nutrient Distribution</h4>
-                <div style="font-size: 1.1em; text-align: center; margin-bottom: 10px;">
-                    <strong>Balance Modifier: ${balanceModifier}</strong>
-                </div>
-                <div style="width: 300px; height: 120px;">
-                    <ul style="list-style-type: none; padding: 0;">
+            // Renderiza o rótulo central e a legenda
+            document.getElementById('suggested-foods-list').querySelector('h4').textContent = `Optimal Meal: ${balanceModifier}`;
+
+            // Renderiza legenda separada
+            const legendHtml = `
+                <div id="pie-legend">
+                    <p style="text-align: center;"><strong>Balance Modifier: ${balanceModifier}</strong></p>
+                    <ul style="list-style-type: none; padding: 0; margin: 0; font-size: 0.9em;">
                         ${data.map(slice => 
-                            `<li style="font-weight: ${slice.percent > 28 || slice.percent < 22 ? 'bold' : 'normal'};">
-                                <span style="display: inline-block; width: 10px; height: 10px; background-color: ${slice.color}; margin-right: 4px;"></span> 
-                                ${slice.label}: ${slice.percent.toFixed(1)}% (Goal: 25%)
+                            `<li style="margin-bottom: 5px;">
+                                <span style="display: inline-block; width: 10px; height: 10px; background-color: ${slice.color}; margin-right: 4px; border-radius: 2px;"></span> 
+                                ${slice.label}: ${slice.percent.toFixed(1)}% 
                             </li>`
                         ).join('')}
                     </ul>
-                </div>`;
+                </div>
+            `;
+            // Substitui a lista de comidas pelo resultado da otimização e a legenda
+            document.getElementById('suggested-foods-list').innerHTML += legendHtml;
         }
 
         /**
-         * Calculates the suggested diet based on user preferences and nutrient balance.
+         * Finds the optimal diet (Knapsack Problem approach).
          */
-        function calculateSuggestedDiet() {
-            const listContainer = document.getElementById('suggested-foods-list');
-            const chartContainer = document.getElementById('nutrition-pie-chart-container');
+        function findOptimalDiet(availableFoods) {
+            const TARGET_PERCENTAGE = 0.25; // Goal: 25% for each nutrient
             
-            // Passo 1: Filtrar Alimentos Disponíveis e Aceitáveis
-            // IMPLEMENTANDO O FILTRO DE GOSTO E EXCLUSÃO (Horrible/Worst/SELECT_STATUS)
-            const availableFoods = foodData.filter(item => {
-                const name = item.Food_Name;
-                const prefs = userPreferences[name];
-                
-                // --- Regras de Exclusão (Filtro Básico) ---
-                if (!prefs) return false; 
-                
-                // 1. Excluir se o jogador não avaliou ou removeu da lista
-                if (prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST || 
-                    prefs.status === FOOD_STATUS_KEYS.SELECT_STATUS) { 
-                    return false;
-                }
-                
-                // 2. Regra de Gosto é Lei (Horrible é banido)
-                if (prefs.status === FOOD_STATUS_KEYS.HORRIBLE || 
-                    name === worstFood) {
-                    return false;
-                }
-                
-                // 3. Excluir se a caloria da comida for maior que o estômago
-                if (item.Official_Calories_Game > stomachSize) {
-                    return false;
-                }
-                
-                return true; 
-            });
+            // Step 1: Pre-process available foods (calculate nutrient ratios per calorie)
+            const processedFoods = availableFoods.map(food => ({
+                name: food.Food_Name,
+                calories: food.Official_Calories_Game,
+                carbs: food.Carbs,
+                fat: food.Fat,
+                protein: food.Protein,
+                vitamins: food.Vitamins,
+                // Optional: priority score for Delicious/Favorite foods
+                priority: (food.Food_Name === favoriteFood) ? 2 : (userPreferences[food.Food_Name].status === FOOD_STATUS_KEYS.DELICIOUS ? 1 : 0),
+            }));
 
-            if (availableFoods.length === 0) {
-                listContainer.innerHTML = '<p style="color: red;">No suitable foods available based on your current evaluation. Please evaluate some items as GOOD, OK, or DELICIOUS.</p>';
-                chartContainer.innerHTML = '';
-                return;
-            }
-
-            // [Lógica da Otimização Combinatória seria implementada aqui na próxima etapa]
-            
-            // --- CÁLCULO DUMMY/PROVISÓRIO (Simulação da Dieta) ---
-            
-            const suggestedDiet = []; 
+            // Storage for current diet and totals
             let currentCalories = 0;
+            let currentNutrients = { Carbs: 0, Fat: 0, Protein: 0, Vitamins: 0 };
+            let suggestedDiet = []; // { food: food object, count: N }
 
-            for (const food of availableFoods) {
-                if (currentCalories + food.Official_Calories_Game <= stomachSize) {
-                    suggestedDiet.push(food);
-                    currentCalories += food.Official_Calories_Game;
+            // --- Greedy Algorithm Start ---
+            
+            // Loop while there is space in the stomach
+            while (currentCalories < stomachSize) {
+                
+                // Calculate the current deficiency (variance from 25%)
+                const totalNutrients = currentNutrients.Carbs + currentNutrients.Fat + currentNutrients.Protein + currentNutrients.Vitamins;
+                const currentDistribution = totalNutrients > 0 ? {
+                    Carbs: currentNutrients.Carbs / totalNutrients,
+                    Fat: currentNutrients.Fat / totalNutrients,
+                    Protein: currentNutrients.Protein / totalNutrients,
+                    Vitamins: currentNutrients.Vitamins / totalNutrients,
+                } : { Carbs: 0, Fat: 0, Protein: 0, Vitamins: 0 };
+                
+                // Find the MOST deficient nutrient
+                let mostDeficientNutrient = null;
+                let maxDeficiency = -Infinity;
+                
+                for (const nutrient in currentDistribution) {
+                    const deficiency = TARGET_PERCENTAGE - currentDistribution[nutrient];
+                    if (deficiency > maxDeficiency) {
+                        maxDeficiency = deficiency;
+                        mostDeficientNutrient = nutrient;
+                    }
                 }
-                if (suggestedDiet.length >= 10) break;
+                
+                // Find the best food to fill that deficiency
+                let bestFoodToEat = null;
+                let bestFoodScore = -Infinity;
+
+                for (const food of processedFoods) {
+                    if (currentCalories + food.calories > stomachSize) continue;
+
+                    // Score: How effectively does this food fill the deficiency?
+                    // Simplified Score: (Nutrient_Value / Total_Nutrients_in_Food) * Priority
+                    const foodTotalNutrients = food.carbs + food.fat + food.protein + food.vitamins;
+                    if (foodTotalNutrients === 0) continue; 
+                    
+                    const nutrientValueInFood = food[mostDeficientNutrient.toLowerCase()]; // e.g., food.carbs
+                    const deficiencyFillRatio = nutrientValueInFood / foodTotalNutrients;
+                    
+                    // Incorporate Priority (Gosto): foods the player likes get a multiplier
+                    let score = deficiencyFillRatio * (1 + food.priority); 
+                    
+                    if (score > bestFoodScore) {
+                        bestFoodScore = score;
+                        bestFoodToEat = food;
+                    }
+                }
+
+                if (!bestFoodToEat) {
+                    // Cannot fit any more food, or no foods are available to improve the balance
+                    break;
+                }
+
+                // Consume the best food found
+                currentCalories += bestFoodToEat.calories;
+                currentNutrients.Carbs += bestFoodToEat.carbs;
+                currentNutrients.Fat += bestFoodToEat.fat;
+                currentNutrients.Protein += bestFoodToEat.protein;
+                currentNutrients.Vitamins += bestFoodToEat.vitamins;
+                
+                // Add to suggested diet list (combine duplicates)
+                const existingEntry = suggestedDiet.find(e => e.name === bestFoodToEat.name);
+                if (existingEntry) {
+                    existingEntry.count++;
+                } else {
+                    suggestedDiet.push({ name: bestFoodToEat.name, count: 1, calories: bestFoodToEat.calories });
+                }
             }
 
-            if (suggestedDiet.length === 0) {
-                 listContainer.innerHTML = '<p style="color: red;">Could not find a single food to fit within your stomach size limit.</p>';
-                 chartContainer.innerHTML = '';
-                 return;
-            }
+            // --- Final Analysis ---
             
-            let totalCarbs = 0;
-            let totalFat = 0;
-            let totalProtein = 0;
-            let totalVitamins = 0;
-            
-            suggestedDiet.forEach(food => {
-                totalCarbs += food.Carbs;
-                totalFat += food.Fat;
-                totalProtein += food.Protein;
-                totalVitamins += food.Vitamins;
-            });
-            
-            const totalNutrients = totalCarbs + totalFat + totalProtein + totalVitamins;
-            
+            const totalNutrients = currentNutrients.Carbs + currentNutrients.Fat + currentNutrients.Protein + currentNutrients.Vitamins;
+
             const dietAnalysis = {
-                Carbs: (totalCarbs / totalNutrients) * 100,
-                Fat: (totalFat / totalNutrients) * 100,
-                Protein: (totalProtein / totalNutrients) * 100,
-                Vitamins: (totalVitamins / totalNutrients) * 100,
+                Carbs: (currentNutrients.Carbs / totalNutrients) * 100,
+                Fat: (currentNutrients.Fat / totalNutrients) * 100,
+                Protein: (currentNutrients.Protein / totalNutrients) * 100,
+                Vitamins: (currentNutrients.Vitamins / totalNutrients) * 100,
                 TotalCalories: currentCalories
             };
             
-            // --- Renderizar Resultados ---
+            // --- Renderizar Resultados Finais ---
             
-            listContainer.innerHTML = '<h4>Optimal Meal (Prototype - Filtered):</h4>';
+            listContainer.innerHTML = '<h4>Suggested Meal Plan:</h4>';
             listContainer.innerHTML += `
                 <p><strong>Goal Calories: ${stomachSize} Kcal</strong></p>
                 <p><strong>Total Diet Calories: ${dietAnalysis.TotalCalories} Kcal (Remaining: ${stomachSize - dietAnalysis.TotalCalories} Kcal)</strong></p>
                 <ul style="list-style-type: none; padding: 0;">
-                    ${suggestedDiet.map(food => `<li>- ${food.Food_Name} (${food.Official_Calories_Game} Kcal) [Status: ${userPreferences[food.Food_Name].status}]</li>`).join('')}
+                    ${suggestedDiet.map(entry => `<li>- ${entry.count}x ${entry.name} (${entry.calories} Kcal each)</li>`).join('')}
                 </ul>
             `;
             
             renderPieChart(dietAnalysis);
         }
-
 
         // --- Core Functions (Non-Global) ---
 
@@ -512,6 +525,7 @@
                 loadUserPreferences();
                 loadStomachSize();
                 loadGlobalTags();
+                loadStrictTastePreference(); // Carrega o estado do toggle
 
                 // 3. Render the two main components (Evaluated List + Search)
                 renderFoodLists(); 
@@ -560,66 +574,9 @@
             html += renderSearchInterface(unevaluatedFoods);
 
             container.innerHTML = html;
-        }
-
-        /**
-         * Renders the table for foods that have an explicit status set.
-         */
-        function renderEvaluatedTable(foods) {
-            if (foods.length === 0) {
-                return '<p>No foods evaluated yet. Use the search field below to add your first item!</p>';
-            }
-
-            let tableHtml = '<table class="food-list">';
-            tableHtml += '<thead><tr><th>Food Name</th><th>Carbs</th><th>Fat</th><th>Protein</th><th>Vitamins</th><th>Calories (Game)</th><th>Status</th></tr></thead>';
-            tableHtml += '<tbody>';
-
-            foods.forEach(item => {
-                const name = item.Food_Name;
-                const prefs = userPreferences[name];
-                
-                // Variáveis para a tag global
-                const isFavorite = name === favoriteFood;
-                const isWorst = name === worstFood;
-                const needsAttention = prefs.status === FOOD_STATUS_KEYS.SELECT_STATUS;
-                
-                // Aplica a classe de destaque
-                let rowClass = '';
-                let statusCellContent;
-
-                if (isFavorite) {
-                    rowClass = 'row-favorite';
-                    statusCellContent = `<span class="status-tag favorite">★ FAVORITE</span>`;
-                } else if (isWorst) {
-                    rowClass = 'row-worst';
-                    statusCellContent = `<span class="status-tag worst">☠ WORST</span>`;
-                } else {
-                    // Se não for Favorite/Worst, mostra o dropdown normal
-                    if (needsAttention) {
-                         rowClass = 'row-attention';
-                    }
-                    statusCellContent = `
-                        <select class="status-select" onchange="updateFoodStatus('${name}', this.value)">
-                            ${STATUS_OPTIONS.map(s => 
-                                `<option value="${s}" ${s === prefs.status ? 'selected' : ''}>${s}</option>`
-                            ).join('')}
-                        </select>
-                    `;
-                }
-                
-                tableHtml += `<tr class="${rowClass}">
-                    <td>${name}</td>
-                    <td>${item.Carbs}</td>
-                    <td>${item.Fat}</td>
-                    <td>${item.Protein}</td>
-                    <td>${item.Vitamins}</td>
-                    <td>${item.Official_Calories_Game}</td>
-                    <td>${statusCellContent}</td>
-                </tr>`;
-            });
-
-            tableHtml += '</tbody></table>';
-            return tableHtml;
+            
+            // Garante que o toggle está com o estado correto
+            document.getElementById('strict-taste-toggle').checked = strictTasteMode;
         }
 
         /**
@@ -627,11 +584,9 @@
          */
         function renderGlobalTagSelectors(foods) {
             
-            // Gera as opções HTML completas para os dois dropdowns
             const generateSelectHtml = (tagType) => {
                 const currentValue = tagType === 'favorite' ? favoriteFood : worstFood;
                 
-                // Lista de opções, garantindo que o item CURRENTLY SELECIONADO seja marcado
                 const options = foods.map(item => {
                     const name = item.Food_Name;
                     const isSelected = name === currentValue;
@@ -661,10 +616,66 @@
         }
 
         /**
+         * Renders the table for foods that have an explicit status set.
+         */
+        function renderEvaluatedTable(foods) {
+            if (foods.length === 0) {
+                return '<p>No foods evaluated yet. Use the search field below to add your first item!</p>';
+            }
+
+            let tableHtml = '<table class="food-list">';
+            tableHtml += '<thead><tr><th>Food Name</th><th>Carbs</th><th>Fat</th><th>Protein</th><th>Vitamins</th><th>Calories (Game)</th><th>Status</th></tr></thead>';
+            tableHtml += '<tbody>';
+
+            foods.forEach(item => {
+                const name = item.Food_Name;
+                const prefs = userPreferences[name];
+                
+                const isFavorite = name === favoriteFood;
+                const isWorst = name === worstFood;
+                const needsAttention = prefs.status === FOOD_STATUS_KEYS.SELECT_STATUS;
+                
+                let rowClass = '';
+                let statusCellContent;
+
+                if (isFavorite) {
+                    rowClass = 'row-favorite';
+                    statusCellContent = `<span class="status-tag favorite">★ FAVORITE</span>`;
+                } else if (isWorst) {
+                    rowClass = 'row-worst';
+                    statusCellContent = `<span class="status-tag worst">☠ WORST</span>`;
+                } else {
+                    if (needsAttention) {
+                         rowClass = 'row-attention';
+                    }
+                    statusCellContent = `
+                        <select class="status-select" onchange="updateFoodStatus('${name}', this.value)">
+                            ${STATUS_OPTIONS.map(s => 
+                                `<option value="${s}" ${s === prefs.status ? 'selected' : ''}>${s}</option>`
+                            ).join('')}
+                        </select>
+                    `;
+                }
+                
+                tableHtml += `<tr class="${rowClass}">
+                    <td>${name}</td>
+                    <td>${item.Carbs}</td>
+                    <td>${item.Fat}</td>
+                    <td>${item.Protein}</td>
+                    <td>${item.Vitamins}</td>
+                    <td>${item.Official_Calories_Game}</td>
+                    <td>${statusCellContent}</td>
+                </tr>`;
+            });
+
+            tableHtml += '</tbody></table>';
+            return tableHtml;
+        }
+
+        /**
          * Renders the search/selection interface (using datalist for type-ahead search).
          */
         function renderSearchInterface(foods) {
-            // Cria a lista de opções para o datalist
             const options = foods.map(item => `<option value="${item.Food_Name}">`).join('');
             
             let searchHtml = `
@@ -676,136 +687,19 @@
             `;
             return searchHtml;
         }
-
-
-        // --- Core Helper Functions ---
         
         /**
-         * Loads preferences from localStorage or sets initial 'Remove from list' status.
+         * Loads the state of the strict taste toggle.
          */
-        function loadUserPreferences() {
-            const storedData = localStorage.getItem(DATA_STORAGE_KEY);
-
-            if (storedData) {
-                userPreferences = JSON.parse(storedData);
-                sessionElement.textContent = 'Preferences loaded.';
-            } else {
-                // Initialize preferences: every item starts as 'Remove from list'
-                foodData.forEach(item => {
-                    const name = item.Food_Name;
-                    userPreferences[name] = {
-                        status: FOOD_STATUS_KEYS.REMOVE_FROM_LIST, 
-                    };
-                });
-                saveUserPreferences();
-                sessionElement.textContent = 'New session initialized (All set to Remove from list).';
-            }
-        }
-
-        /**
-         * Saves current user preferences to localStorage.
-         */
-        function saveUserPreferences() {
-            localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(userPreferences));
-        }
-
-        /**
-         * Loads global tags (Favorite/Worst) from localStorage.
-         */
-        function loadGlobalTags() {
-            favoriteFood = localStorage.getItem(FAVORITE_KEY) || '';
-            worstFood = localStorage.getItem(WORST_KEY) || '';
-        }
-        
-        /**
-         * Saves the global favorite/worst tag to localStorage.
-         */
-        function saveGlobalTag(tagKey, foodName) {
-            localStorage.setItem(tagKey, foodName);
-        }
-
-        /**
-         * Loads the Stomach Size from localStorage or defaults to 3000.
-         */
-        function loadStomachSize() {
-            const storedSize = localStorage.getItem(STOMACH_SIZE_KEY);
-            if (storedSize) {
-                stomachSize = parseInt(storedSize);
-            }
-            // Update the input field with the loaded/default value
-            const inputElement = document.getElementById('stomach-size-input');
-            if(inputElement) inputElement.value = stomachSize;
-        }
-
-        /**
-         * Saves the Stomach Size to localStorage.
-         */
-        function saveStomachSize() {
-            localStorage.setItem(STOMACH_SIZE_KEY, stomachSize);
-        }
-
-        /**
-         * Fetches the date of the last commit from the GitHub API.
-         */
-        async function fetchLastCommitDate() {
-            const dateElement = document.getElementById('last-update-date');
-            dateElement.textContent = 'fetching commit data...'; // Dynamic loading
-
-            const repoOwner = 'Crazy-Spy';
-            const repoName = 'EcoFoodCalc';
-            const branchName = 'main'; 
-            const apiURL = `https://api.github.com/repos/${repoOwner}/${repoName}/commits/${branchName}`;
-
-            try {
-                // Check local storage for cached data (using ETag for efficiency)
-                const cachedDate = localStorage.getItem('last-commit-date');
-                const etag = localStorage.getItem('last-commit-etag') || '';
-
-                const response = await fetch(apiURL, {
-                    headers: {
-                        'If-None-Match': etag
-                    }
-                });
-
-                if (response.status === 304) {
-                    // Not Modified: use cached date
-                    if (cachedDate) {
-                        dateElement.textContent = cachedDate;
-                        return;
-                    }
-                }
-                
-                if (!response.ok) {
-                    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                const lastCommitDate = new Date(data.commit.author.date);
-                
-                // Format: DD/MM/YYYY HH:MM (24h format)
-                const formattedDate = lastCommitDate.toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                });
-
-                dateElement.textContent = formattedDate;
-
-                // Save new data to localStorage
-                localStorage.setItem('last-commit-date', formattedDate);
-                localStorage.setItem('last-commit-etag', response.headers.get('ETag'));
-
-            } catch (error) {
-                console.error("Failed to fetch GitHub commit date:", error);
-                dateElement.textContent = 'Error fetching date.';
+        function loadStrictTastePreference() {
+            const storedStrict = localStorage.getItem(STRICT_TASTE_KEY);
+            if (storedStrict !== null) {
+                strictTasteMode = storedStrict === 'true';
             }
         }
 
 
-        // Initialize the application at the end of the script
+        // Initialize the application
         initApp();
     </script>
 </body>
