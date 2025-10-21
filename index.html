@@ -19,6 +19,10 @@
         /* Highlighting Rows */
         .row-favorite { background-color: #fffacd; /* Light Yellow */ }
         .row-worst { background-color: #ffcccc; /* Light Red */ }
+        .row-attention { 
+            background-color: #ffe4b2; /* Orange-Yellow for Attention */
+            border: 2px solid #ffaa00;
+        }
         
         /* Status and Tag Styles */
         .status-select { padding: 5px; border-radius: 4px; }
@@ -50,7 +54,7 @@
             text-align: right;
         }
         
-        /* Ajuste 1: Centralização dos Selects de Tags */
+        /* Centralization of Selects de Tags */
         #global-tags-section {
             display: flex;
             flex-direction: column;
@@ -99,9 +103,10 @@
     <script>
         const FOOD_SOURCE_URL = 'foodsource.json';
         
-        // Define ALL possible status states.
+        // Define ALL possible status states. ADDING 'SELECT_STATUS'
         const FOOD_STATUS_KEYS = {
             'REMOVE_FROM_LIST': 'Remove from list', 
+            'SELECT_STATUS': '--- SELECT STATUS ---', // NOVO STATUS PADRÃO DE AVALIAÇÃO
             'DELICIOUS': 'Delicious', 
             'GOOD': 'Good', 
             'OK': 'Ok', 
@@ -208,8 +213,8 @@
                 return;
             }
 
-            // Define o novo status como 'Delicious'
-            const defaultNewStatus = FOOD_STATUS_KEYS.DELICIOUS;
+            // NOVO STATUS PADRÃO: SELECT_STATUS
+            const defaultNewStatus = FOOD_STATUS_KEYS.SELECT_STATUS; 
 
             // Atualiza a preferência do usuário (tira do Remove from list)
             userPreferences[itemKey].status = defaultNewStatus;
@@ -363,11 +368,6 @@
          * Renders the new global Favorite/Worst selectors.
          */
         function renderGlobalTagSelectors(foods) {
-            // Cria as opções (tagOptions) para os dropdowns de Favorite/Worst
-            const tagOptionsHtml = foods.map(item => {
-                const name = item.Food_Name;
-                return `<option value="${name}">${name}</option>`;
-            }).join('');
             
             // Gera as opções HTML completas para os dois dropdowns
             const generateSelectHtml = (tagType) => {
@@ -474,7 +474,7 @@
             `;
             return searchHtml;
         }
-
+        
         // --- Footer Functions ---
         
         /**
