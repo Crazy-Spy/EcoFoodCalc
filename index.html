@@ -151,7 +151,6 @@
         const FOOD_SOURCE_URL = 'foodsource.json';
         const STOMACH_SIZE_DEFAULT = 3000;
         
-        // Define ALL possible status states.
         const FOOD_STATUS_KEYS = {
             'REMOVE_FROM_LIST': 'Remove from list', 
             'SELECT_STATUS': '--- SELECT STATUS ---', 
@@ -162,12 +161,8 @@
             'HORRIBLE': 'Horrible'
         };
         
-        // Cores para o Gráfico de Pizza (Padrão: Carbs, Fat, Protein, Vitamins)
         const PIE_COLORS = {
-            'Carbs': '#3498db',
-            'Fat': '#2ecc71',
-            'Protein': '#e74c3c',
-            'Vitamins': '#f1c40f'
+            'Carbs': '#3498db', 'Fat': '#2ecc71', 'Protein': '#e74c3c', 'Vitamins': '#f1c40f'
         };
 
         const STATUS_OPTIONS = Object.values(FOOD_STATUS_KEYS);
@@ -177,7 +172,6 @@
         const WORST_KEY = 'eco_worst_food';
         const STRICT_TASTE_KEY = 'eco_strict_taste';
         
-        // Global variables
         let foodData = [];
         let userPreferences = {};
         let stomachSize = STOMACH_SIZE_DEFAULT;
@@ -189,9 +183,10 @@
         const container = document.getElementById('food-container');
 
 
-        // --- SECTION 1: CORE FUNCTION DEFINITIONS (Must be defined before usage) ---
+        // --- SECTION 1: CORE FUNCTION DEFINITIONS (Guaranteed Order) ---
 
         // (Helper Functions for Data Persistence)
+
         function saveUserPreferences() {
             localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(userPreferences));
         }
@@ -204,6 +199,47 @@
             localStorage.setItem(tagKey, foodName);
         }
 
+        function loadUserPreferences() {
+            const storedData = localStorage.getItem(DATA_STORAGE_KEY);
+
+            if (storedData) {
+                userPreferences = JSON.parse(storedData);
+                sessionElement.textContent = 'Preferences loaded.';
+            } else {
+                foodData.forEach(item => {
+                    const name = item.Food_Name;
+                    userPreferences[name] = { status: FOOD_STATUS_KEYS.REMOVE_FROM_LIST };
+                });
+                saveUserPreferences();
+                sessionElement.textContent = 'New session initialized (All set to Remove from list).';
+            }
+        }
+
+        function loadGlobalTags() {
+            favoriteFood = localStorage.getItem(FAVORITE_KEY) || '';
+            worstFood = localStorage.getItem(WORST_KEY) || '';
+        }
+        
+        function loadStomachSize() {
+            const storedSize = localStorage.getItem(STOMACH_SIZE_KEY);
+            if (storedSize) {
+                stomachSize = parseInt(storedSize);
+            }
+            const inputElement = document.getElementById('stomach-size-input');
+            if(inputElement) inputElement.value = stomachSize;
+        }
+
+        function loadStrictTastePreference() {
+            const storedStrict = localStorage.getItem(STRICT_TASTE_KEY);
+            if (storedStrict !== null) {
+                strictTasteMode = storedStrict === 'true';
+            }
+            const toggleElement = document.getElementById('strict-taste-toggle');
+            if (toggleElement) {
+                toggleElement.checked = strictTasteMode;
+            }
+        }
+        
         // (Algorithmic Utility Functions)
 
         function calculateBalanceModifier(analysis) {
@@ -264,50 +300,7 @@
             document.getElementById('suggested-foods-list').innerHTML += legendHtml;
         }
 
-        // (Loader Functions - Needed by initApp)
-
-        function loadUserPreferences() {
-            const storedData = localStorage.getItem(DATA_STORAGE_KEY);
-
-            if (storedData) {
-                userPreferences = JSON.parse(storedData);
-                sessionElement.textContent = 'Preferences loaded.';
-            } else {
-                foodData.forEach(item => {
-                    const name = item.Food_Name;
-                    userPreferences[name] = { status: FOOD_STATUS_KEYS.REMOVE_FROM_LIST };
-                });
-                saveUserPreferences();
-                sessionElement.textContent = 'New session initialized (All set to Remove from list).';
-            }
-        }
-
-        function loadGlobalTags() {
-            favoriteFood = localStorage.getItem(FAVORITE_KEY) || '';
-            worstFood = localStorage.getItem(WORST_KEY) || '';
-        }
-        
-        function loadStomachSize() {
-            const storedSize = localStorage.getItem(STOMACH_SIZE_KEY);
-            if (storedSize) {
-                stomachSize = parseInt(storedSize);
-            }
-            const inputElement = document.getElementById('stomach-size-input');
-            if(inputElement) inputElement.value = stomachSize;
-        }
-
-        function loadStrictTastePreference() {
-            const storedStrict = localStorage.getItem(STRICT_TASTE_KEY);
-            if (storedStrict !== null) {
-                strictTasteMode = storedStrict === 'true';
-            }
-            const toggleElement = document.getElementById('strict-taste-toggle');
-            if (toggleElement) {
-                toggleElement.checked = strictTasteMode;
-            }
-        }
-
-        // (Renderers - Defined before main flow)
+        // (Main Renderers)
 
         function renderEvaluatedTable(foods) {
             if (foods.length === 0) {
@@ -409,41 +402,9 @@
             return searchHtml;
         }
 
-        // (Main Render Flow Logic)
 
-        function renderFoodLists() {
-            const allFoods = [...foodData];
-            const evaluatedFoods = allFoods.filter(item => {
-                const prefs = userPreferences[item.Food_Name];
-                return prefs && prefs.status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
-            });
-            const unevaluatedFoods = allFoods.filter(item => {
-                const prefs = userPreferences[item.Food_Name];
-                return !prefs || prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
-            });
-            
-            calculateSuggestedDiet(); 
-            
-            let html = renderGlobalTagSelectors(evaluatedFoods);
-
-            html += '<h2>1. Your Evaluated Foods</h2>';
-            html += `<p>Manage the foods you have already tried. (Evaluated Foods: ${evaluatedFoods.length})</p>`;
-            html += renderEvaluatedTable(evaluatedFoods);
-
-            html += '<hr style="margin: 40px 0;">';
-            
-            html += '<h2>2. Evaluate New Foods</h2>';
-            html += '<p>Search or select a food to add it to your evaluated list and set its status.</p>';
-            html += renderSearchInterface(unevaluatedFoods);
-
-            container.innerHTML = html;
-            
-            document.getElementById('strict-taste-toggle').checked = strictTasteMode;
-        }
-
-
-        // (Main Control and Initialization)
-
+        // (Main Control Flow)
+        
         function findOptimalDiet(availableFoods) {
             const TARGET_PERCENTAGE = 0.25; 
             
@@ -541,26 +502,68 @@
             renderPieChart(dietAnalysis);
         }
 
+        function calculateSuggestedDiet() {
+            const listContainer = document.getElementById('suggested-foods-list');
+            const chartContainer = document.getElementById('nutrition-pie-chart-container');
+
+            const availableFoods = foodData.filter(item => {
+                const name = item.Food_Name;
+                const prefs = userPreferences[name];
+                
+                if (!prefs) return false; 
+                
+                if (prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST || 
+                    prefs.status === FOOD_STATUS_KEYS.SELECT_STATUS || 
+                    name === worstFood) { 
+                    return false;
+                }
+
+                if (item.Official_Calories_Game > stomachSize) {
+                    return false;
+                }
+                
+                if (strictTasteMode) {
+                    if (prefs.status === FOOD_STATUS_KEYS.HORRIBLE || prefs.status === FOOD_STATUS_KEYS.BAD) {
+                         return false;
+                    }
+                } else {
+                    if (prefs.status === FOOD_STATUS_KEYS.HORRIBLE) {
+                         return false;
+                    }
+                }
+                
+                return true; 
+            });
+
+            if (availableFoods.length === 0) {
+                listContainer.innerHTML = '<p style="color: red;">No suitable foods available based on your current evaluation.</p>';
+                chartContainer.style.background = '#fff';
+                chartContainer.innerHTML = '';
+                return;
+            }
+
+            findOptimalDiet(availableFoods);
+        }
+
+        // --- SECTION 4: INITIALIZATION ---
+
         async function initApp() {
             
             sessionElement.textContent = 'Checking preferences...';
             container.innerHTML = 'Loading food data...';
 
             try {
-                // 1. Load the JSON file
                 const response = await fetch(FOOD_SOURCE_URL);
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
                 foodData = await response.json();
 
-                // 2. Load user preferences, stomach size, and global tags
                 loadUserPreferences();
                 loadStomachSize();
                 loadGlobalTags();
                 loadStrictTastePreference(); 
 
-                // 3. Render the two main components (Evaluated List + Search)
                 renderFoodLists(); 
                 
             } catch (error) {
@@ -569,56 +572,9 @@
                 sessionElement.textContent = 'Failed to start session.';
             }
 
-            // 4. Set a placeholder for the last update date
             document.getElementById('last-update-date').textContent = new Date().toLocaleDateString('en-US');
             fetchLastCommitDate();
         }
-
-        function fetchLastCommitDate() {
-            const dateElement = document.getElementById('last-update-date');
-            dateElement.textContent = 'fetching commit data...';
-
-            const repoOwner = 'Crazy-Spy';
-            const repoName = 'EcoFoodCalc';
-            const branchName = 'main'; 
-            const apiURL = `https://api.github.com/repos/${repoOwner}/${repoName}/commits/${branchName}`;
-
-            try {
-                const cachedDate = localStorage.getItem('last-commit-date');
-                const etag = localStorage.getItem('last-commit-etag') || '';
-
-                const response = fetch(apiURL, { headers: { 'If-None-Match': etag } });
-
-                response.then(res => {
-                    if (res.status === 304) {
-                        if (cachedDate) {
-                            dateElement.textContent = cachedDate;
-                            return;
-                        }
-                    }
-                    if (!res.ok) {
-                        throw new Error(`GitHub API error: ${res.status} ${res.statusText}`);
-                    }
-                    return res.json();
-                }).then(data => {
-                    const lastCommitDate = new Date(data.commit.author.date);
-                    const formattedDate = lastCommitDate.toLocaleDateString('pt-BR', {
-                        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
-                    });
-                    dateElement.textContent = formattedDate;
-                    localStorage.setItem('last-commit-date', formattedDate);
-                    localStorage.setItem('last-commit-etag', response.headers.get('ETag'));
-                }).catch(error => {
-                    console.error("Failed to fetch GitHub commit date:", error);
-                    dateElement.textContent = 'Error fetching date.';
-                });
-
-            } catch (error) {
-                console.error("Critical error in fetchLastCommitDate:", error);
-                dateElement.textContent = 'Error fetching date.';
-            }
-        }
-
 
         // Initialize the application at the end of the script
         document.addEventListener('DOMContentLoaded', initApp);
