@@ -22,7 +22,7 @@
         
         /* Status and Tag Styles */
         .status-select { padding: 5px; border-radius: 4px; }
-        
+
         /* Custom Tag Display */
         .status-tag { 
             padding: 5px 8px; 
@@ -122,7 +122,106 @@
         let favoriteFood = ''; // Nome da comida favorita
         let worstFood = '';    // Nome da comida pior
 
-        // --- Core Functions ---
+        // --- GLOBAL FUNCTIONS (Must be outside of initApp) ---
+
+        /**
+         * Clears all saved data (preferences and stomach size) and reloads the app.
+         */
+        function resetPreferences() {
+            if (confirm('Are you sure you want to delete ALL saved preferences (food status, tags, and stomach size)? This action cannot be undone.')) {
+                localStorage.removeItem(DATA_STORAGE_KEY);
+                localStorage.removeItem(STOMACH_SIZE_KEY);
+                localStorage.removeItem(FAVORITE_KEY); // Remove tags globais
+                localStorage.removeItem(WORST_KEY);     // Remove tags globais
+                localStorage.removeItem('last-commit-date'); 
+                localStorage.removeItem('last-commit-etag');
+                
+                // Recarrega o app para iniciar do zero
+                window.location.reload();
+            }
+        }
+        
+        /**
+         * Updates the stomach size variable and saves it.
+         */
+        function updateStomachSize(newValue) {
+            stomachSize = parseInt(newValue) || 3000;
+            saveStomachSize();
+            console.log(`Stomach size updated to ${stomachSize} kcal.`);
+            // Optimization logic re-run will be added here later
+        }
+
+        /**
+         * Sets a new Favorite or Worst food and re-renders the list.
+         */
+        function setGlobalTag(selectElement, tagType) {
+            const foodName = selectElement.value;
+            
+            if (tagType === 'favorite') {
+                favoriteFood = foodName;
+                saveGlobalTag(FAVORITE_KEY, foodName);
+            } else if (tagType === 'worst') {
+                worstFood = foodName;
+                saveGlobalTag(WORST_KEY, foodName);
+            }
+
+            // Limpa a tag se a opção "--- Select ---" ou "(None)" for escolhida
+            if (!foodName) {
+                if (tagType === 'favorite') favoriteFood = '';
+                if (tagType === 'worst') worstFood = '';
+                saveGlobalTag(tagType === 'favorite' ? FAVORITE_KEY : WORST_KEY, '');
+            }
+
+            // Re-renderizar para atualizar as cores e a outra lista de tags
+            renderFoodLists();
+            console.log(`${tagType} food set to: ${foodName}`);
+        }
+
+        /**
+         * Updates the status (Delicious, Good, etc.) for a food item and re-renders if needed.
+         */
+        function updateFoodStatus(foodName, newStatus) {
+            userPreferences[foodName].status = newStatus;
+            
+            // Se o status for alterado para ou de 'Remove from list', precisamos re-renderizar para mover o item.
+            const shouldRerender = newStatus === FOOD_STATUS_KEYS.REMOVE_FROM_LIST || 
+                                   (userPreferences[foodName].status !== newStatus); 
+
+            saveUserPreferences();
+            
+            if (shouldRerender) {
+                 renderFoodLists(); 
+            }
+            console.log(`Status of ${foodName} updated to ${newStatus}.`);
+        }
+        
+        /**
+         * Adds a selected food from the search box to the evaluated list by updating its status.
+         */
+        function addFoodToEvaluatedList(foodName) {
+            // Encontra o item (case sensitive) e garante que ele existe e ainda não foi avaliado
+            const itemKey = foodData.find(item => item.Food_Name === foodName)?.Food_Name;
+            
+            if (!itemKey || userPreferences[itemKey].status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST) {
+                alert(`Food "${foodName}" not found or already evaluated.`);
+                document.getElementById('food-search-input').value = ""; // Clear input
+                return;
+            }
+
+            // Define o novo status como 'Delicious'
+            const defaultNewStatus = FOOD_STATUS_KEYS.DELICIOUS;
+
+            // Atualiza a preferência do usuário (tira do Remove from list)
+            userPreferences[itemKey].status = defaultNewStatus;
+            
+            // Salva e re-renderiza as duas listas (a comida "salta" de um para o outro)
+            saveUserPreferences();
+            renderFoodLists();
+            
+            document.getElementById('food-search-input').value = ""; // Limpa a caixa de busca
+        }
+
+        // --- Core Functions (Non-Global) ---
 
         /**
          * Initializes the application: loads JSON data and user preferences.
@@ -191,23 +290,6 @@
         }
 
         /**
-         * Clears all saved data (preferences and stomach size) and reloads the app.
-         */
-        function resetPreferences() {
-            if (confirm('Are you sure you want to delete ALL saved preferences (food status, tags, and stomach size)? This action cannot be undone.')) {
-                localStorage.removeItem(DATA_STORAGE_KEY);
-                localStorage.removeItem(STOMACH_SIZE_KEY);
-                localStorage.removeItem(FAVORITE_KEY); // Remove tags globais
-                localStorage.removeItem(WORST_KEY);     // Remove tags globais
-                localStorage.removeItem('last-commit-date'); 
-                localStorage.removeItem('last-commit-etag');
-                
-                // Recarrega o app para iniciar do zero
-                window.location.reload();
-            }
-        }
-
-        /**
          * Loads global tags (Favorite/Worst) from localStorage.
          */
         function loadGlobalTags() {
@@ -236,48 +318,11 @@
         }
         
         /**
-         * Updates the stomach size variable and saves it.
-         */
-        function updateStomachSize(newValue) {
-            stomachSize = parseInt(newValue) || 3000;
-            saveStomachSize();
-            console.log(`Stomach size updated to ${stomachSize} kcal.`);
-            // Optimization logic re-run will be added here later
-        }
-
-        /**
          * Saves the global favorite/worst tag to localStorage.
          */
         function saveGlobalTag(tagKey, foodName) {
             localStorage.setItem(tagKey, foodName);
         }
-
-        /**
-         * Sets a new Favorite or Worst food and re-renders the list.
-         */
-        function setGlobalTag(selectElement, tagType) {
-            const foodName = selectElement.value;
-            
-            if (tagType === 'favorite') {
-                favoriteFood = foodName;
-                saveGlobalTag(FAVORITE_KEY, foodName);
-            } else if (tagType === 'worst') {
-                worstFood = foodName;
-                saveGlobalTag(WORST_KEY, foodName);
-            }
-
-            // Limpa a tag se a opção "--- Select ---" ou "(None)" for escolhida
-            if (!foodName) {
-                if (tagType === 'favorite') favoriteFood = '';
-                if (tagType === 'worst') worstFood = '';
-                saveGlobalTag(tagType === 'favorite' ? FAVORITE_KEY : WORST_KEY, '');
-            }
-
-            // Re-renderizar para atualizar as cores e a outra lista de tags
-            renderFoodLists();
-            console.log(`${tagType} food set to: ${foodName}`);
-        }
-
 
         /**
          * Renders the two main lists: Evaluated Foods Table and Search Box.
@@ -315,7 +360,7 @@
         }
 
         /**
-         * Renders the new global Favorite/Worst selectors (Ajuste 2: mantendo o estado).
+         * Renders the new global Favorite/Worst selectors.
          */
         function renderGlobalTagSelectors(foods) {
             // Cria as opções (tagOptions) para os dropdowns de Favorite/Worst
@@ -429,54 +474,7 @@
             `;
             return searchHtml;
         }
-        
-        /**
-         * Adds a selected food from the search box to the evaluated list by updating its status.
-         */
-        function addFoodToEvaluatedList(foodName) {
-            // Encontra o item (case sensitive) e garante que ele existe e ainda não foi avaliado
-            const itemKey = foodData.find(item => item.Food_Name === foodName)?.Food_Name;
-            
-            if (!itemKey || userPreferences[itemKey].status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST) {
-                alert(`Food "${foodName}" not found or already evaluated.`);
-                document.getElementById('food-search-input').value = ""; // Clear input
-                return;
-            }
 
-            // Define o novo status como 'Delicious'
-            const defaultNewStatus = FOOD_STATUS_KEYS.DELICIOUS;
-
-            // Atualiza a preferência do usuário (tira do Remove from list)
-            userPreferences[itemKey].status = defaultNewStatus;
-            
-            // Salva e re-renderiza as duas listas (a comida "salta" de um para o outro)
-            saveUserPreferences();
-            renderFoodLists();
-            
-            document.getElementById('food-search-input').value = ""; // Limpa a caixa de busca
-        }
-
-
-        // --- User Interaction Functions ---
-
-        /**
-         * Updates the status (Delicious, Good, etc.) for a food item and re-renders if needed.
-         */
-        function updateFoodStatus(foodName, newStatus) {
-            userPreferences[foodName].status = newStatus;
-            
-            // Se o status for alterado para ou de 'Remove from list', precisamos re-renderizar para mover o item.
-            const shouldRerender = newStatus === FOOD_STATUS_KEYS.REMOVE_FROM_LIST || 
-                                   (userPreferences[foodName].status !== newStatus); 
-
-            saveUserPreferences();
-            
-            if (shouldRerender) {
-                 renderFoodLists(); 
-            }
-            console.log(`Status of ${foodName} updated to ${newStatus}.`);
-        }
-        
         // --- Footer Functions ---
         
         /**
@@ -542,3 +540,6 @@
 
         // Initialize the application
         initApp();
+    </script>
+</body>
+</html>
