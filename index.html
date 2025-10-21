@@ -223,22 +223,26 @@
         /**
          * Updates the status (Delicious, Good, etc.) for a food item and re-renders if needed.
          */
-        function updateFoodStatus(foodName, newStatus) {
+function updateFoodStatus(foodName, newStatus) {
+            const oldStatus = userPreferences[foodName].status;
             userPreferences[foodName].status = newStatus;
             
-            // Se o status for alterado para ou de 'Remove from list', precisamos re-renderizar para mover o item.
-            const shouldRerender = newStatus === FOOD_STATUS_KEYS.REMOVE_FROM_LIST || 
-                                   (userPreferences[foodName].status !== newStatus); 
+            // Apenas re-renderiza TUDO se o item entrar ou sair da lista principal (mudando de/para REMOVE_FROM_LIST)
+            const isMovingList = (oldStatus === FOOD_STATUS_KEYS.REMOVE_FROM_LIST && newStatus !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST) ||
+                                 (oldStatus !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST && newStatus === FOOD_STATUS_KEYS.REMOVE_FROM_LIST);
 
             saveUserPreferences();
             
-            if (shouldRerender) {
+            if (isMovingList) {
                  renderFoodLists(); 
             } else {
-                // Se só mudou o status (ex: de GOOD para DELICIOUS), só recalcula a dieta
-                calculateSuggestedDiet(); 
+                // Se o item não saiu da lista, apenas recalcula a dieta
+                calculateSuggestedDiet();
+                // E re-renderiza a tabela avaliada para atualizar o destaque de atenção se necessário
+                document.getElementById('food-container').querySelector('.food-list').outerHTML = renderEvaluatedTable(
+                    foodData.filter(item => userPreferences[item.Food_Name].status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST)
+                );
             }
-            console.log(`Status of ${foodName} updated to ${newStatus}.`);
         }
         
         /**
