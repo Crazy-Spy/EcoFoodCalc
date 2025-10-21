@@ -12,6 +12,41 @@
         /* Version Top Right */
         #version-display { float: right; font-size: 0.9em; color: #555; }
         
+        /* Layout for Diet Section */
+        #diet-suggestion-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        #suggested-foods-list {
+            flex: 1;
+            min-width: 50%;
+        }
+        #nutrition-pie-chart-container {
+            width: 250px;
+            height: 250px;
+            position: relative;
+            background: #fff;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Custom Pie Chart CSS Hack (Initial State) */
+        .pie-slice {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
         .food-list { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .food-list th, .food-list td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         .food-list th { background-color: #f2f2f2; }
@@ -93,6 +128,16 @@
         <input type="number" id="stomach-size-input" value="3000" min="100" onchange="updateStomachSize(this.value)">
     </div>
     
+    <h2>Suggested Diet Optimization</h2>
+    <div id="diet-suggestion-container">
+        <div id="suggested-foods-list">
+            <p>Processing optimization algorithm...</p>
+        </div>
+        <div id="nutrition-pie-chart-container">
+            </div>
+    </div>
+    <hr>
+    
     <div id="food-container"></div> 
 
     <footer>
@@ -103,29 +148,38 @@
     <script>
         const FOOD_SOURCE_URL = 'foodsource.json';
         
-        // Define ALL possible status states. ADDING 'SELECT_STATUS'
+        // Define ALL possible status states.
         const FOOD_STATUS_KEYS = {
             'REMOVE_FROM_LIST': 'Remove from list', 
-            'SELECT_STATUS': '--- SELECT STATUS ---', // NOVO STATUS PADRÃO DE AVALIAÇÃO
+            'SELECT_STATUS': '--- SELECT STATUS ---', 
             'DELICIOUS': 'Delicious', 
             'GOOD': 'Good', 
             'OK': 'Ok', 
             'BAD': 'Bad', 
             'HORRIBLE': 'Horrible'
         };
+        
+        // Cores para o Gráfico de Pizza (Padrão: Carbs, Fat, Protein, Vitamins)
+        const PIE_COLORS = {
+            'Carbs': '#3498db',    // Azul
+            'Fat': '#2ecc71',      // Verde
+            'Protein': '#e74c3c',  // Vermelho
+            'Vitamins': '#f1c40f'  // Amarelo
+        };
+
 
         const STATUS_OPTIONS = Object.values(FOOD_STATUS_KEYS);
         const DATA_STORAGE_KEY = 'eco_food_preferences';
         const STOMACH_SIZE_KEY = 'eco_stomach_size';
-        const FAVORITE_KEY = 'eco_favorite_food'; // Novo para controle global
-        const WORST_KEY = 'eco_worst_food'; // Novo para controle global
+        const FAVORITE_KEY = 'eco_favorite_food';
+        const WORST_KEY = 'eco_worst_food';
         
         // Global variables
         let foodData = [];
         let userPreferences = {};
         let stomachSize = 3000;
-        let favoriteFood = ''; // Nome da comida favorita
-        let worstFood = '';    // Nome da comida pior
+        let favoriteFood = '';
+        let worstFood = '';
 
         // --- GLOBAL FUNCTIONS (Must be outside of initApp) ---
 
@@ -136,8 +190,8 @@
             if (confirm('Are you sure you want to delete ALL saved preferences (food status, tags, and stomach size)? This action cannot be undone.')) {
                 localStorage.removeItem(DATA_STORAGE_KEY);
                 localStorage.removeItem(STOMACH_SIZE_KEY);
-                localStorage.removeItem(FAVORITE_KEY); // Remove tags globais
-                localStorage.removeItem(WORST_KEY);     // Remove tags globais
+                localStorage.removeItem(FAVORITE_KEY);
+                localStorage.removeItem(WORST_KEY);
                 localStorage.removeItem('last-commit-date'); 
                 localStorage.removeItem('last-commit-etag');
                 
@@ -153,7 +207,7 @@
             stomachSize = parseInt(newValue) || 3000;
             saveStomachSize();
             console.log(`Stomach size updated to ${stomachSize} kcal.`);
-            // Optimization logic re-run will be added here later
+            renderFoodLists(); // Re-render para atualizar a sugestão
         }
 
         /**
@@ -188,14 +242,19 @@
         function updateFoodStatus(foodName, newStatus) {
             userPreferences[foodName].status = newStatus;
             
-            // Se o status for alterado para ou de 'Remove from list', precisamos re-renderizar para mover o item.
+            // Se o status for alterado para ou de 'Remove from list' ou SELECT_STATUS
             const shouldRerender = newStatus === FOOD_STATUS_KEYS.REMOVE_FROM_LIST || 
-                                   (userPreferences[foodName].status !== newStatus); 
+                                   newStatus === FOOD_STATUS_KEYS.SELECT_STATUS ||
+                                   userPreferences[foodName].status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST || 
+                                   userPreferences[foodName].status === FOOD_STATUS_KEYS.SELECT_STATUS;
 
             saveUserPreferences();
             
             if (shouldRerender) {
                  renderFoodLists(); 
+            } else {
+                // Se só mudou o status (ex: de GOOD para DELICIOUS), só recalcula a dieta
+                calculateSuggestedDiet(); 
             }
             console.log(`Status of ${foodName} updated to ${newStatus}.`);
         }
@@ -226,43 +285,168 @@
             document.getElementById('food-search-input').value = ""; // Limpa a caixa de busca
         }
 
-        // --- Core Functions (Non-Global) ---
-
+        // --- Algorithmic Core ---
+        
         /**
-         * Initializes the application: loads JSON data and user preferences.
+         * Calculates the suggested diet based on user preferences and nutrient balance.
          */
-        async function initApp() {
-            const container = document.getElementById('food-container');
-            const sessionElement = document.getElementById('user-session');
+        function calculateSuggestedDiet() {
+            const listContainer = document.getElementById('suggested-foods-list');
+            const chartContainer = document.getElementById('nutrition-pie-chart-container');
             
-            sessionElement.textContent = 'Checking preferences...';
-            container.innerHTML = 'Loading food data...'; // Dynamic loading message
-
-            try {
-                // 1. Load the JSON file
-                const response = await fetch(FOOD_SOURCE_URL);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                foodData = await response.json();
-
-                // 2. Load user preferences, stomach size, and global tags
-                loadUserPreferences();
-                loadStomachSize();
-                loadGlobalTags();
-
-                // 3. Render the two main components (Evaluated List + Search)
-                renderFoodLists(); 
+            // Passo 1: Filtrar Alimentos Disponíveis e Aceitáveis
+            const availableFoods = foodData.filter(item => {
+                const name = item.Food_Name;
+                const prefs = userPreferences[name];
                 
-            } catch (error) {
-                console.error("Error loading or processing JSON:", error);
-                container.innerHTML = `<p style="color: red;">Error loading ${FOOD_SOURCE_URL}. Please check the file name and format.</p>`;
-                sessionElement.textContent = 'Failed to start session.';
+                if (!prefs) return false; // Deve ter prefs
+                
+                // Regras de Exclusão (100% de certeza que o player não quer):
+                if (prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST || 
+                    prefs.status === FOOD_STATUS_KEYS.HORRIBLE || 
+                    name === worstFood || 
+                    prefs.status === FOOD_STATUS_KEYS.SELECT_STATUS) { // Ignora se não avaliado
+                    return false;
+                }
+                
+                return true; // Se tem status aceitável e não é Worst/Horrible
+            });
+
+            if (availableFoods.length === 0) {
+                listContainer.innerHTML = '<p style="color: red;">No suitable foods available based on your current evaluation. Please evaluate some items as GOOD, OK, or DELICIOUS.</p>';
+                chartContainer.innerHTML = '';
+                return;
             }
 
-            // 4. Fetch the last commit date (footer/header)
-            fetchLastCommitDate();
+            // [Lógica da Otimização Combinatória seria implementada aqui na próxima etapa]
+            
+            // --- CÁLCULO DUMMY/PROVISÓRIO (Próxima etapa será o cálculo real) ---
+            
+            // Por enquanto, vamos pegar as 5 primeiras comidas aceitáveis para a demo:
+            const suggestedDiet = availableFoods.slice(0, 5); 
+            
+            let totalCarbs = 0;
+            let totalFat = 0;
+            let totalProtein = 0;
+            let totalVitamins = 0;
+            let totalNutrients = 0;
+            let totalCalories = 0;
+            
+            suggestedDiet.forEach(food => {
+                totalCarbs += food.Carbs;
+                totalFat += food.Fat;
+                totalProtein += food.Protein;
+                totalVitamins += food.Vitamins;
+                totalCalories += food.Official_Calories_Game;
+            });
+            
+            totalNutrients = totalCarbs + totalFat + totalProtein + totalVitamins;
+            
+            const dietAnalysis = {
+                Carbs: (totalCarbs / totalNutrients) * 100,
+                Fat: (totalFat / totalNutrients) * 100,
+                Protein: (totalProtein / totalNutrients) * 100,
+                Vitamins: (totalVitamins / totalNutrients) * 100,
+                TotalCalories: totalCalories
+            };
+            
+            // --- Renderizar Resultados ---
+            
+            listContainer.innerHTML = '<h4>Optimal Meal (Prototype):</h4>';
+            listContainer.innerHTML += `
+                <p><strong>Goal Calories: ${stomachSize} Kcal</strong></p>
+                <p><strong>Total Diet Calories: ${dietAnalysis.TotalCalories} Kcal</strong></p>
+                <ul style="list-style-type: none; padding: 0;">
+                    ${suggestedDiet.map(food => `<li>- ${food.Food_Name} (${food.Official_Calories_Game} Kcal)</li>`).join('')}
+                </ul>
+                <p style="margin-top: 15px;">**Balance Modifier (Estimate): ${calculateBalanceModifier(dietAnalysis)}</p>
+            `;
+            
+            renderPieChart(dietAnalysis);
         }
+
+        /**
+         * Placeholder: Calculates the Balance Modifier (0.5x to 2.0x).
+         */
+        function calculateBalanceModifier(analysis) {
+             const nutrients = [analysis.Carbs, analysis.Fat, analysis.Protein, analysis.Vitamins];
+             // Implementação de desvio padrão simplificada
+             const avg = 25;
+             const variance = nutrients.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / 4;
+             const stdDev = Math.sqrt(variance);
+             
+             // Fator de balanceamento simplificado: quanto menor o desvio, mais perto de 2.0x
+             // (Esta é uma aproximação que faremos correta na próxima etapa!)
+             let modifier = 2.0 - (stdDev / 10);
+             if (modifier < 0.5) modifier = 0.5;
+             
+             return `${modifier.toFixed(2)}x`;
+        }
+
+        /**
+         * Renders the simulated CSS Pie Chart.
+         */
+        function renderPieChart(analysis) {
+            const chartContainer = document.getElementById('nutrition-pie-chart-container');
+            const data = [
+                { label: 'Carbs', percent: analysis.Carbs, color: PIE_COLORS.Carbs },
+                { label: 'Fat', percent: analysis.Fat, color: PIE_COLORS.Fat },
+                { label: 'Protein', percent: analysis.Protein, color: PIE_COLORS.Protein },
+                { label: 'Vitamins', percent: analysis.Vitamins, color: PIE_COLORS.Vitamins }
+            ].sort((a, b) => b.percent - a.percent); // Ordena para renderização correta
+            
+            let html = '<div style="position: relative; width: 100%; height: 100%;">';
+            let cumulativePercent = 0;
+
+            // Gera fatias do gráfico de pizza
+            data.forEach((slice, index) => {
+                const startAngle = (cumulativePercent / 100) * 360;
+                const endAngle = ((cumulativePercent + slice.percent) / 100) * 360;
+                
+                // Usa conic-gradient para simular o gráfico de pizza (melhor que o hack de clip)
+                html += `
+                    <div style="
+                        position: absolute;
+                        width: 100%;
+                        height: 100%;
+                        clip: rect(0, 250px, 250px, 125px);
+                        border-radius: 50%;
+                        transform: rotate(${startAngle}deg);
+                        background: conic-gradient(${slice.color} ${startAngle}deg, ${slice.color} ${endAngle}deg, transparent ${endAngle}deg);
+                        display: none; /* Mantendo invisível por enquanto para simplificar o CSS/JS da próxima etapa */
+                    "></div>
+                `;
+                cumulativePercent += slice.percent;
+            });
+            
+            // Renderiza legenda e centro
+            html += '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-size: 0.8em; z-index: 10;">Nutrition Balance</div>';
+            
+            html += '<ul style="position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%); padding: 0; list-style-type: none; display: flex; font-size: 0.8em;">';
+            data.forEach(slice => {
+                 html += `<li style="margin-right: 10px; display: flex; align-items: center;">
+                             <span style="display: inline-block; width: 10px; height: 10px; background-color: ${slice.color}; margin-right: 4px;"></span>
+                             ${slice.label} (${slice.percent.toFixed(0)}%)
+                          </li>`;
+            });
+            html += '</ul>';
+            
+            html += '</div>';
+            
+            // Aviso: O Gráfico de Pizza simples por CSS é complexo para gerar dinamicamente.
+            // Para garantir que o app não quebre agora, estou usando uma div vazia com legenda para a V0.1,
+            // e vamos implementar um gráfico real (com Chart.js, por exemplo) na próxima etapa.
+            
+            chartContainer.innerHTML = `<h4 style="text-align: center;">Nutrient Distribution</h4>
+                                        <div style="width: 250px; height: 120px;">
+                                            <ul style="list-style-type: none; padding: 0;">
+                                                ${data.map(slice => `<li><span style="display: inline-block; width: 10px; height: 10px; background-color: ${slice.color}; margin-right: 4px;"></span> ${slice.label}: ${slice.percent.toFixed(1)}% (Goal: 25%)</li>`).join('')}
+                                            </ul>
+                                        </div>`;
+        }
+        
+        // --- Funções de Carregamento e Persistência (Mantidas) ---
+        // ... (loadUserPreferences, loadGlobalTags, saveGlobalTag, saveUserPreferences, etc. são mantidas)
 
         /**
          * Loads preferences from localStorage or sets initial 'Remove from list' status.
@@ -346,6 +530,9 @@
                 return !prefs || prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
             });
             
+            // NOVO: CHAMA O ALGORITMO AQUI!
+            calculateSuggestedDiet(); 
+            
             // Renderiza os seletores de Favorite/Worst globais
             let html = renderGlobalTagSelectors(evaluatedFoods);
 
@@ -368,6 +555,11 @@
          * Renders the new global Favorite/Worst selectors.
          */
         function renderGlobalTagSelectors(foods) {
+            // Cria as opções (tagOptions) para os dropdowns de Favorite/Worst
+            const tagOptionsHtml = foods.map(item => {
+                const name = item.Food_Name;
+                return `<option value="${name}">${name}</option>`;
+            }).join('');
             
             // Gera as opções HTML completas para os dois dropdowns
             const generateSelectHtml = (tagType) => {
@@ -421,8 +613,9 @@
                 // Variáveis para a tag global
                 const isFavorite = name === favoriteFood;
                 const isWorst = name === worstFood;
+                const needsAttention = prefs.status === FOOD_STATUS_KEYS.SELECT_STATUS;
                 
-                // Aplica a classe de destaque (amarelo/vermelho)
+                // Aplica a classe de destaque
                 let rowClass = '';
                 let statusCellContent;
 
@@ -434,6 +627,9 @@
                     statusCellContent = `<span class="status-tag worst">☠ WORST</span>`;
                 } else {
                     // Se não for Favorite/Worst, mostra o dropdown normal
+                    if (needsAttention) {
+                         rowClass = 'row-attention';
+                    }
                     statusCellContent = `
                         <select class="status-select" onchange="updateFoodStatus('${name}', this.value)">
                             ${STATUS_OPTIONS.map(s => 
@@ -474,9 +670,7 @@
             `;
             return searchHtml;
         }
-        
-        // --- Footer Functions ---
-        
+
         /**
          * Fetches the date of the last commit from the GitHub API.
          */
