@@ -189,39 +189,19 @@
         const container = document.getElementById('food-container');
 
 
-        // --- SECTION 1: CORE FUNCTION DEFINITIONS (MUST BE AT THE TOP) ---
+        // --- SECTION 1: CORE FUNCTION DEFINITIONS (Must be defined before usage) ---
 
         // (Helper Functions for Data Persistence)
         function saveUserPreferences() {
             localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(userPreferences));
         }
+
         function saveStomachSize() {
             localStorage.setItem(STOMACH_SIZE_KEY, stomachSize);
         }
+        
         function saveGlobalTag(tagKey, foodName) {
             localStorage.setItem(tagKey, foodName);
-        }
-        function loadGlobalTags() {
-            favoriteFood = localStorage.getItem(FAVORITE_KEY) || '';
-            worstFood = localStorage.getItem(WORST_KEY) || '';
-        }
-        function loadStomachSize() {
-            const storedSize = localStorage.getItem(STOMACH_SIZE_KEY);
-            if (storedSize) {
-                stomachSize = parseInt(storedSize);
-            }
-            const inputElement = document.getElementById('stomach-size-input');
-            if(inputElement) inputElement.value = stomachSize;
-        }
-        function loadStrictTastePreference() {
-            const storedStrict = localStorage.getItem(STRICT_TASTE_KEY);
-            if (storedStrict !== null) {
-                strictTasteMode = storedStrict === 'true';
-            }
-            const toggleElement = document.getElementById('strict-taste-toggle');
-            if (toggleElement) {
-                toggleElement.checked = strictTasteMode;
-            }
         }
 
         // (Algorithmic Utility Functions)
@@ -237,7 +217,7 @@
              
              return `${modifier.toFixed(2)}x`;
         }
-
+        
         function renderPieChart(analysis) {
             const chartContainer = document.getElementById('nutrition-pie-chart-container');
             const data = [
@@ -284,8 +264,51 @@
             document.getElementById('suggested-foods-list').innerHTML += legendHtml;
         }
 
-        // (Main Renderers - Defined early as they call each other)
+        // (Loader Functions - Needed by initApp)
+
+        function loadUserPreferences() {
+            const storedData = localStorage.getItem(DATA_STORAGE_KEY);
+
+            if (storedData) {
+                userPreferences = JSON.parse(storedData);
+                sessionElement.textContent = 'Preferences loaded.';
+            } else {
+                foodData.forEach(item => {
+                    const name = item.Food_Name;
+                    userPreferences[name] = { status: FOOD_STATUS_KEYS.REMOVE_FROM_LIST };
+                });
+                saveUserPreferences();
+                sessionElement.textContent = 'New session initialized (All set to Remove from list).';
+            }
+        }
+
+        function loadGlobalTags() {
+            favoriteFood = localStorage.getItem(FAVORITE_KEY) || '';
+            worstFood = localStorage.getItem(WORST_KEY) || '';
+        }
         
+        function loadStomachSize() {
+            const storedSize = localStorage.getItem(STOMACH_SIZE_KEY);
+            if (storedSize) {
+                stomachSize = parseInt(storedSize);
+            }
+            const inputElement = document.getElementById('stomach-size-input');
+            if(inputElement) inputElement.value = stomachSize;
+        }
+
+        function loadStrictTastePreference() {
+            const storedStrict = localStorage.getItem(STRICT_TASTE_KEY);
+            if (storedStrict !== null) {
+                strictTasteMode = storedStrict === 'true';
+            }
+            const toggleElement = document.getElementById('strict-taste-toggle');
+            if (toggleElement) {
+                toggleElement.checked = strictTasteMode;
+            }
+        }
+
+        // (Renderers - Defined before main flow)
+
         function renderEvaluatedTable(foods) {
             if (foods.length === 0) {
                 return '<p>No foods evaluated yet. Use the search field below to add your first item!</p>';
@@ -340,16 +363,17 @@
             return tableHtml;
         }
 
-        // ... (renderGlobalTagSelectors, renderSearchInterface - Não incluídas por brevidade, mas estão no seu código anterior e devem ser definidas aqui)
-
         function renderGlobalTagSelectors(foods) {
+            
             const generateSelectHtml = (tagType) => {
                 const currentValue = tagType === 'favorite' ? favoriteFood : worstFood;
+                
                 const options = foods.map(item => {
                     const name = item.Food_Name;
                     const isSelected = name === currentValue;
                     return `<option value="${name}" ${isSelected ? 'selected' : ''}>${name}</option>`;
                 }).join('');
+
                 return `
                     <select onchange="setGlobalTag(this, '${tagType}')">
                         <option value="" ${currentValue === '' ? 'selected' : ''}>--- Select ---</option>
@@ -359,6 +383,8 @@
                     </select>
                 `;
             };
+
+
             return `
                 <div id="global-tags-section">
                     <h3>Global Taste Tags (Single Selection)</h3>
@@ -372,17 +398,51 @@
 
         function renderSearchInterface(foods) {
             const options = foods.map(item => `<option value="${item.Food_Name}">`).join('');
-            return `
+            
+            let searchHtml = `
                 <input list="food-datalist" id="food-search-input" onchange="addFoodToEvaluatedList(this.value)" placeholder="Type or select food name (${foods.length} remaining)" autocomplete="off">
                 <datalist id="food-datalist">
                     ${options}
                 </datalist>
                 <p style="margin-top: 10px; font-size: 0.9em; color: #666;">Note: After typing a name, click outside the box or press Enter to add the food.</p>
             `;
+            return searchHtml;
+        }
+
+        // (Main Render Flow Logic)
+
+        function renderFoodLists() {
+            const allFoods = [...foodData];
+            const evaluatedFoods = allFoods.filter(item => {
+                const prefs = userPreferences[item.Food_Name];
+                return prefs && prefs.status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
+            });
+            const unevaluatedFoods = allFoods.filter(item => {
+                const prefs = userPreferences[item.Food_Name];
+                return !prefs || prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
+            });
+            
+            calculateSuggestedDiet(); 
+            
+            let html = renderGlobalTagSelectors(evaluatedFoods);
+
+            html += '<h2>1. Your Evaluated Foods</h2>';
+            html += `<p>Manage the foods you have already tried. (Evaluated Foods: ${evaluatedFoods.length})</p>`;
+            html += renderEvaluatedTable(evaluatedFoods);
+
+            html += '<hr style="margin: 40px 0;">';
+            
+            html += '<h2>2. Evaluate New Foods</h2>';
+            html += '<p>Search or select a food to add it to your evaluated list and set its status.</p>';
+            html += renderSearchInterface(unevaluatedFoods);
+
+            container.innerHTML = html;
+            
+            document.getElementById('strict-taste-toggle').checked = strictTasteMode;
         }
 
 
-        // (Main Logic Handlers - Defined early as they call each other)
+        // (Main Control and Initialization)
 
         function findOptimalDiet(availableFoods) {
             const TARGET_PERCENTAGE = 0.25; 
@@ -481,84 +541,6 @@
             renderPieChart(dietAnalysis);
         }
 
-        function calculateSuggestedDiet() {
-            const listContainer = document.getElementById('suggested-foods-list');
-            const chartContainer = document.getElementById('nutrition-pie-chart-container');
-
-            const availableFoods = foodData.filter(item => {
-                const name = item.Food_Name;
-                const prefs = userPreferences[name];
-                
-                if (!prefs) return false; 
-                
-                if (prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST || 
-                    prefs.status === FOOD_STATUS_KEYS.SELECT_STATUS || 
-                    name === worstFood) { 
-                    return false;
-                }
-
-                if (strictTasteMode) {
-                    if (prefs.status === FOOD_STATUS_KEYS.HORRIBLE || prefs.status === FOOD_STATUS_KEYS.BAD) {
-                         return false;
-                    }
-                } else {
-                    if (prefs.status === FOOD_STATUS_KEYS.HORRIBLE) {
-                         return false;
-                    }
-                }
-                
-                if (item.Official_Calories_Game > stomachSize) {
-                    return false;
-                }
-                
-                return true; 
-            });
-
-            if (availableFoods.length === 0) {
-                listContainer.innerHTML = '<p style="color: red;">No suitable foods available based on your current evaluation.</p>';
-                chartContainer.style.background = '#fff';
-                chartContainer.innerHTML = '';
-                return;
-            }
-
-            findOptimalDiet(availableFoods);
-        }
-
-        function renderFoodLists() {
-            const allFoods = [...foodData];
-            const evaluatedFoods = allFoods.filter(item => {
-                const prefs = userPreferences[item.Food_Name];
-                return prefs && prefs.status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
-            });
-            const unevaluatedFoods = allFoods.filter(item => {
-                const prefs = userPreferences[item.Food_Name];
-                return !prefs || prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
-            });
-            
-            calculateSuggestedDiet(); 
-            
-            let html = renderGlobalTagSelectors(evaluatedFoods);
-
-            html += '<h2>1. Your Evaluated Foods</h2>';
-            html += `<p>Manage the foods you have already tried. (Evaluated Foods: ${evaluatedFoods.length})</p>`;
-            html += renderEvaluatedTable(evaluatedFoods);
-
-            html += '<hr style="margin: 40px 0;">';
-            
-            html += '<h2>2. Evaluate New Foods</h2>';
-            html += '<p>Search or select a food to add it to your evaluated list and set its status.</p>';
-            html += renderSearchInterface(unevaluatedFoods);
-
-            container.innerHTML = html;
-            
-            document.getElementById('strict-taste-toggle').checked = strictTasteMode;
-        }
-
-        // --- SECTION 3: INITIALIZATION ---
-
-        /**
-         * Initializes the application.
-         */
         async function initApp() {
             
             sessionElement.textContent = 'Checking preferences...';
@@ -592,10 +574,51 @@
             fetchLastCommitDate();
         }
 
-        // ... (fetchLastCommitDate, loadUserPreferences, renderGlobalTagSelectors, renderEvaluatedTable, renderSearchInterface - Devem ser definidas antes de initApp, como feito acima)
+        function fetchLastCommitDate() {
+            const dateElement = document.getElementById('last-update-date');
+            dateElement.textContent = 'fetching commit data...';
 
-        // As funções renderGlobalTagSelectors, renderEvaluatedTable e renderSearchInterface do código anterior devem estar definidas aqui.
-        // Apenas a título de organização do código que você deve usar, as chamadas HTML/JS estão no topo, e as definições estão abaixo.
+            const repoOwner = 'Crazy-Spy';
+            const repoName = 'EcoFoodCalc';
+            const branchName = 'main'; 
+            const apiURL = `https://api.github.com/repos/${repoOwner}/${repoName}/commits/${branchName}`;
+
+            try {
+                const cachedDate = localStorage.getItem('last-commit-date');
+                const etag = localStorage.getItem('last-commit-etag') || '';
+
+                const response = fetch(apiURL, { headers: { 'If-None-Match': etag } });
+
+                response.then(res => {
+                    if (res.status === 304) {
+                        if (cachedDate) {
+                            dateElement.textContent = cachedDate;
+                            return;
+                        }
+                    }
+                    if (!res.ok) {
+                        throw new Error(`GitHub API error: ${res.status} ${res.statusText}`);
+                    }
+                    return res.json();
+                }).then(data => {
+                    const lastCommitDate = new Date(data.commit.author.date);
+                    const formattedDate = lastCommitDate.toLocaleDateString('pt-BR', {
+                        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
+                    });
+                    dateElement.textContent = formattedDate;
+                    localStorage.setItem('last-commit-date', formattedDate);
+                    localStorage.setItem('last-commit-etag', response.headers.get('ETag'));
+                }).catch(error => {
+                    console.error("Failed to fetch GitHub commit date:", error);
+                    dateElement.textContent = 'Error fetching date.';
+                });
+
+            } catch (error) {
+                console.error("Critical error in fetchLastCommitDate:", error);
+                dateElement.textContent = 'Error fetching date.';
+            }
+        }
+
 
         // Initialize the application at the end of the script
         document.addEventListener('DOMContentLoaded', initApp);
