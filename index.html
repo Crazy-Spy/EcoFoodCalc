@@ -133,22 +133,38 @@
                 <p>Processing optimization algorithm...</p>
             </main>
         </div>
+        
         <div id="food-container" class="full-width-card card">
             <header>
-                    <h2>Your Evaluated Foods</h2>
-                    <p>Manage the foods you have already tried.</p>
+                <div class="diet-option-header">
+                    <div>
+                        <h2>Your Evaluated Foods</h2>
+                        <p>Manage the foods you have already tried.</p>
+                    </div>
+                    <div class="form-group" style="min-width: 250px;">
+                        <label for="status-filter" class="u-bold">Filter by Status:</label>
+                        <select id="status-filter" onchange="renderEvaluatedTableComponent()">
+                            <option value="ALL">All Statuses</option>
+                            <option value="Delicious">Delicious</option>
+                            <option value="Good">Good</option>
+                            <option value="Ok">Ok</option>
+                            <option value="Bad">Bad</option>
+                            <option value="Horrible">Horrible</option>
+                        </select>
+                    </div>
+                </div>
             </header>
             <main>
                 <div class="table-container">
-                    <table id="food-table" class="food-table">
-                    </table>
-                    <p id="food-container-status"> </p>
+                    <table id="food-table" class="food-table"></table>
+                    <p id="food-container-status"></p>
                 </div>
             </main>
-         </div>
+        </div>
+
         <footer>
-            <p>Created by CrazySpy. UI by maarten4949</p>
-            <p>Version 0.1</p>
+            <p>Created by <a href="https://www.reddit.com/user/CrazySpy/" target="_blank">CrazySpy</a>. UI by <a href="https://www.reddit.com/user/maarten4949/" target="_blank">Maarten4949</a></p>
+            <p>Version 0.5</p>
             <p>Last update: <span id="last-update-date"></span></p>
         </footer>
     </body>

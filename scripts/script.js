@@ -1,5 +1,9 @@
 const FOOD_SOURCE_URL = "foodsource.json";
 
+// --- VERSION CONTROL ---
+const CURRENT_VERSION = "0.5"; // Versão que introduziu os nomes com espaços
+const VERSION_STORAGE_KEY = "eco_app_version";
+
 // Define ALL possible status states.
 const FOOD_STATUS_KEYS = {
   REMOVE_FROM_LIST: "Remove from list",
@@ -180,8 +184,8 @@ function updateFoodStatus(foodName, newStatus) {
     renderEvaluatedTableComponent();
   }
 }
+
 function removeItemFromPreferences(foodName) {
-  const oldStatus = userPreferences[foodName].status;
   userPreferences[foodName] = {
     status: FOOD_STATUS_KEYS.REMOVE_FROM_LIST,
     timestamp: 0,
@@ -214,7 +218,6 @@ function addFoodToEvaluatedList(event) {
     userPreferences[itemKey].status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST
   ) {
     alert(`Food "${foodName}" not found or already evaluated.`);
-    document.getElementById("food-search-input").value = ""; // Clear input
     return;
   }
 
@@ -243,7 +246,7 @@ function addFoodToEvaluatedList(event) {
   // Salva o status recém-selecionado para persistência na próxima busca
   saveLastSelectedStatus(selectedStatus);
 
-  // Salva e re-renderiza as duas listas (a comida "salta" de um para o outro)
+  // Salva e re-renderiza as duas listas
   saveUserPreferences();
   renderFoodLists();
 
@@ -252,9 +255,6 @@ function addFoodToEvaluatedList(event) {
 
 // --- NOVIDADE: EXPORTAR E IMPORTAR DADOS ---
 
-/**
- * Prepares all user data from localStorage and triggers a JSON download.
- */
 function exportUserData() {
   const exportData = {
     version: EXPORT_VERSION,
@@ -268,129 +268,56 @@ function exportUserData() {
     sortOrder: localStorage.getItem(SORT_ORDER_KEY),
   };
 
-  const dataStr =
-    "data:text/json;charset=utf-8," +
-    encodeURIComponent(JSON.stringify(exportData, null, 2));
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
   const downloadAnchorNode = document.createElement("a");
   downloadAnchorNode.setAttribute("href", dataStr);
-  downloadAnchorNode.setAttribute(
-    "download",
-    `EcoFoodCalc_Data_CrazySpy_${new Date().toISOString().slice(0, 10)}.json`,
-  );
+  downloadAnchorNode.setAttribute("download", `EcoFoodCalc_Data_${new Date().toISOString().slice(0, 10)}.json`);
   document.body.appendChild(downloadAnchorNode);
   downloadAnchorNode.click();
   downloadAnchorNode.remove();
-
-  console.log("Data exported successfully.");
 }
 
-/**
- * Reads a JSON file uploaded by the user and loads preferences into localStorage.
- */
 function importUserData() {
   const fileInput = document.getElementById("import-file-input");
   const file = fileInput.files[0];
-
-  if (!file) {
-    console.log("No file selected for import.");
-    return;
-  }
-
-  if (file.type !== "application/json") {
-    alert("Error: Please select a valid JSON file.");
-    return;
-  }
+  if (!file) return;
 
   const reader = new FileReader();
   reader.onload = function (event) {
     try {
       const importedData = JSON.parse(event.target.result);
-
-      // Validação mínima para garantir que é o formato esperado
-      if (!importedData.version || !importedData.preferences) {
-        alert("Error: Invalid Eco FoodCalc data format in the file.");
-        return;
-      }
-
-      // Carregar dados de volta para o localStorage
+      if (!importedData.preferences) throw new Error("Invalid format");
+      
       localStorage.setItem(DATA_STORAGE_KEY, importedData.preferences);
+      if (importedData.stomachSize) localStorage.setItem(STOMACH_SIZE_KEY, importedData.stomachSize);
+      if (importedData.favoriteFood) localStorage.setItem(FAVORITE_KEY, importedData.favoriteFood);
+      if (importedData.worstFood) localStorage.setItem(WORST_KEY, importedData.worstFood);
 
-      if (importedData.stomachSize) {
-        localStorage.setItem(STOMACH_SIZE_KEY, importedData.stomachSize);
-      }
-      if (importedData.favoriteFood) {
-        localStorage.setItem(FAVORITE_KEY, importedData.favoriteFood);
-      }
-      if (importedData.worstFood) {
-        localStorage.setItem(WORST_KEY, importedData.worstFood);
-      }
-      if (importedData.lastSelectedStatus) {
-        localStorage.setItem(LAST_STATUS_KEY, importedData.lastSelectedStatus);
-      }
-      if (importedData.sortColumn) {
-        localStorage.setItem(SORT_COLUMN_KEY, importedData.sortColumn);
-      }
-      if (importedData.sortOrder) {
-        localStorage.setItem(SORT_ORDER_KEY, importedData.sortOrder);
-      }
-
-      alert("Data imported successfully! The app will now reload.");
+      alert("Data imported successfully!");
       window.location.reload();
-    } catch (error) {
-      alert(
-        "Error: Could not parse the JSON file. It might be corrupted or malformed.",
-      );
-      console.error("Import Error:", error);
+    } catch (e) {
+      alert("Error importing file.");
     }
   };
-
   reader.readAsText(file);
 }
 
-// --- Algorithmic Core (The Real Deal) ---
+// --- Algorithmic Core ---
 
-/**
- * Calcula o score de balanceamento da dieta (baseado no Desvio Padrão).
- * Quanto menor o score, mais equilibrada a dieta.
- */
 function calculateDietScore(totals) {
   const totalSum = totals.Carbs + totals.Fat + totals.Protein + totals.Vitamins;
   if (totalSum === 0) return Infinity;
-
-  const percentages = [
-    (totals.Carbs / totalSum) * 100,
-    (totals.Fat / totalSum) * 100,
-    (totals.Protein / totalSum) * 100,
-    (totals.Vitamins / totalSum) * 100,
-  ];
-
-  const ideal = 25;
-  const variance =
-    percentages.reduce((sum, val) => sum + Math.pow(val - ideal, 2), 0) / 4;
-  return Math.sqrt(variance); // Score é o Desvio Padrão
+  const percentages = [(totals.Carbs / totalSum) * 100, (totals.Fat / totalSum) * 100, (totals.Protein / totalSum) * 100, (totals.Vitamins / totalSum) * 100];
+  const variance = percentages.reduce((sum, val) => sum + Math.pow(val - 25, 2), 0) / 4;
+  return Math.sqrt(variance);
 }
 
-/**
- * Calculates the Balance Modifier (0.5x to 2.0x) based on the diet score (StdDev).
- * O Desvio Padrão (Score) 50 é o pior (0.5x), Desvio 0 é o melhor (2.0x).
- */
 function calculateBalanceModifier(analysis) {
   const score = calculateDietScore(analysis);
-  // Regra simplificada:
-  // Score 0 (perfeito) -> Modifier 2.0
-  // Score 50 (pior) -> Modifier 0.5
-
-  // Mapeamento linear: f(score) = 2.0 - (score * 0.03)
   let modifier = 2.0 - score * 0.03;
-  if (modifier < 0.5) modifier = 0.5;
-  if (modifier > 2.0) modifier = 2.0;
-
-  return `${modifier.toFixed(2)}x`;
+  return `${Math.max(0.5, Math.min(2.0, modifier)).toFixed(2)}x`;
 }
 
-/**
- * Gera o HTML da distribuição de nutrientes (Nutrient Distribution)
- */
 function renderNutrientDistribution(dietAnalysis) {
   const totalNutrients =
     dietAnalysis.totals.Carbs +
@@ -400,7 +327,6 @@ function renderNutrientDistribution(dietAnalysis) {
 
   if (totalNutrients === 0) return "";
 
-  // NOTE: Mapeamos Carbs/Protein/Fat/Vitamins para as chaves do objeto totals e cores.
   const analysis = {
     Carbs: (dietAnalysis.totals.Carbs / totalNutrients) * 100,
     Protein: (dietAnalysis.totals.Protein / totalNutrients) * 100,
@@ -409,123 +335,67 @@ function renderNutrientDistribution(dietAnalysis) {
   };
 
   const data = [
-    {
-      label: "Carbs",
-      percent: analysis.Carbs,
-      color: PIE_COLORS.Carbs,
-      goal: 25,
-    },
-    {
-      label: "Protein",
-      percent: analysis.Protein,
-      color: PIE_COLORS.Protein,
-      goal: 25,
-    },
-    {
-      label: "Fat",
-      percent: analysis.Fat,
-      color: PIE_COLORS.Fat,
-      goal: 25,
-    },
-    {
-      label: "Vitamins",
-      percent: analysis.Vitamins,
-      color: PIE_COLORS.Vitamins,
-      goal: 25,
-    },
+    { label: "Carbs", percent: analysis.Carbs, color: PIE_COLORS.Carbs },
+    { label: "Protein", percent: analysis.Protein, color: PIE_COLORS.Protein },
+    { label: "Fat", percent: analysis.Fat, color: PIE_COLORS.Fat },
+    { label: "Vitamins", percent: analysis.Vitamins, color: PIE_COLORS.Vitamins },
   ];
 
-  const balanceModifier = calculateBalanceModifier(analysis);
-
-  // --- Lógica do Círculo (Conic Gradient) ---
+  const balanceModifier = calculateBalanceModifier(dietAnalysis.totals);
   let currentAngle = 0;
-  let gradientStops = [];
-
-  data.forEach((slice) => {
-    const angleSize = (slice.percent / 100) * 360;
-    const startAngle = currentAngle;
-    const endAngle = currentAngle + angleSize;
-
-    // Define o início e fim da cor no gradiente
-    gradientStops.push(
-      `${slice.color} ${startAngle.toFixed(1)}deg ${endAngle.toFixed(1)}deg`,
-    );
-
-    currentAngle = endAngle;
+  let gradientStops = data.map(slice => {
+    const start = currentAngle;
+    currentAngle += (slice.percent / 100) * 360;
+    return `${slice.color} ${start.toFixed(1)}deg ${currentAngle.toFixed(1)}deg`;
   });
 
-  const conicGradientStyle = `background: conic-gradient(${gradientStops.join(", ")});`;
-
-  // --- Lógica da Lista de Porcentagens com Destaque de Cor ---
-
-  let html = `
+  return `
      <div class="nutrient-distribution-container">
          <h5 class="balance-modifier">
              Balance Modifier: <span class="balance-modifier-value">${balanceModifier}</span>
          </h5>
          <p class="nutrient-title">Nutrients (Goal: 25% each):</p>
-
-         <div class="nutrient-chart" style="${conicGradientStyle}">
-             </div>
-
+         <div class="nutrient-chart" style="background: conic-gradient(${gradientStops.join(", ")})"></div>
          <div>
              <ul class="nutrient-list">
-                 ${data
-                   .map((slice) => {
-                     // Regra de destaque: Vermelho se muito fora (22% a 28% é a margem ideal)
-                     const isUnbalanced =
-                       slice.percent > 28 || slice.percent < 22;
-                     const colorStyle = `color: ${isUnbalanced ? "#f44336" : "#4CAF50"};`;
-
-                     return `<li style="font-weight: ${isUnbalanced ? "bold" : "normal"};">
-                         <span style="display: inline-block; width: 10px; height: 10px; background-color: ${slice.color}; margin-right: 4px;"></span>
-                         <div class="nutrient-item">
+                 ${data.map(slice => {
+                    const isUnbalanced = slice.percent > 28 || slice.percent < 22;
+                    const colorStyle = `color: ${isUnbalanced ? "#f44336" : "#4CAF50"};`;
+                    return `<li>
+                        <span style="display: inline-block; width: 10px; height: 10px; background-color: ${slice.color}; margin-right: 4px;"></span>
+                        <div class="nutrient-item">
                           <span class="nutrient-label" style="${colorStyle}">${slice.label}:</span>
                           <span class="nutrient-percentage" style="${colorStyle}">${slice.percent.toFixed(1)}%</span>
-                         </div>
-                     </li>`;
-                   })
-                   .join("")}
+                        </div>
+                    </li>`;
+                 }).join("")}
              </ul>
          </div>
-     </div>
- `;
-  return html;
+     </div>`;
 }
-
-/**
- * Gera o HTML completo para uma opção de dieta (lista + distribuição).
- */
 function renderDietOption(dietAnalysis, optionNumber) {
   const isOptimal = optionNumber === 1;
-  const title = isOptimal
-    ? `Optimal Meal (Best Balance):`
-    : `Option ${optionNumber}`;
+  const title = isOptimal ? `Optimal Meal (Best Balance):` : `Option ${optionNumber}`;
   const itemClass = isOptimal ? "optimal-diet-box" : "alternative-diet-box";
 
-  let foodListHtml = "";
-
-  // Agrupa os alimentos repetidos para melhor visualização
+  // Agrupa os alimentos repetidos para o visual de tags do design
   const foodCounts = dietAnalysis.diet.reduce((acc, food) => {
     const key = food.Food_Name;
-    if (!acc[key]) {
-      acc[key] = { count: 0, food: food };
-    }
+    if (!acc[key]) acc[key] = { count: 0, food: food };
     acc[key].count++;
     return acc;
   }, {});
 
-  for (const key in foodCounts) {
-    const item = foodCounts[key];
-    // 🚨 CORREÇÃO: Mostra sempre o multiplicador 1x quando a contagem é 1.
-    const multiplier = `${item.count}x `;
-    foodListHtml += `<li class='food-tag'><div class='food-tag-name'>${multiplier}${item.food.Food_Name}</div><div class='food-tag-calories'>Calories: <span class="food-tag-calories-value">${item.food.Official_Calories_Game} Kcal</span></div><div class='food-tag-status'>Status: <span class="food-tag-status-value">${userPreferences[item.food.Food_Name].status}</span></div></li>`;
-  }
-  let recommendedTag = "";
-  if (isOptimal) {
-    recommendedTag = `<span class="recommended-tag"><i class="ph-fill ph-star icon"></i>Recommended</span>`;
-  }
-  let html = `
+  const foodListHtml = Object.values(foodCounts).map(item => `
+    <li class='food-tag'>
+        <div class='food-tag-name'>${item.count}x ${item.food.Food_Name}</div>
+        <div class='food-tag-calories'>Calories: <span class="food-tag-calories-value">${item.food.Official_Calories_Game} Kcal</span></div>
+        <div class='food-tag-status'>Status: <span class="food-tag-status-value">${userPreferences[item.food.food_Name]?.status || userPreferences[item.food.Food_Name]?.status}</span></div>
+    </li>`).join("");
+
+  let recommendedTag = isOptimal ? `<span class="recommended-tag"><i class="ph-fill ph-star icon"></i>Recommended</span>` : "";
+
+  return `
      <div class="${itemClass} diet-option-box">
         <div class="diet-option-header">
          <h4 class="diet-option-title">${title}</h4>
@@ -534,7 +404,8 @@ function renderDietOption(dietAnalysis, optionNumber) {
          <div class="diet-option-content">
              <div class="diet-option-food-container">
                 <div class='diet-option-metadata'>
-                  <p class='total-calories'>Total Diet Calories: ${dietAnalysis.totals.TotalCalories} Kcal</p><p class='balance-score'>Balance Score: ${dietAnalysis.score.toFixed(2)}</p>
+                  <p class='total-calories'>Total Diet Calories: ${dietAnalysis.totals.TotalCalories} Kcal</p>
+                  <p class='balance-score'>Balance Score: ${dietAnalysis.score.toFixed(2)}</p>
                  </div>
                  <ul class='food-tags'>
                      ${foodListHtml}
@@ -542,26 +413,21 @@ function renderDietOption(dietAnalysis, optionNumber) {
              </div>
              ${renderNutrientDistribution(dietAnalysis)}
          </div>
-     </div>
- `;
-  return html;
+     </div>`;
 }
 
-/**
- * Calculates the suggested diet based on user preferences and nutrient balance.
- */
 function calculateSuggestedDiet() {
   const listContainer = dietSuggestionContainer;
 
-  // Passo 1: Filtrar Alimentos Disponíveis e Aceitáveis
+  // Step 1: Filter Available and Acceptable Foods
   const availableFoods = foodData.filter((item) => {
     const name = item.Food_Name;
     const prefs = userPreferences[name];
 
-    // --- Regras de Exclusão (Filtro de Gosto) ---
+    // Exclusion Rules (Taste Filter)
     if (!prefs) return false;
 
-    // Excluir se o jogador removeu, não avaliou, ou deu nota ruim (BAD, HORRIBLE, WORST)
+    // Exclude if the player removed it, hasn't evaluated it, or rated it poorly
     if (
       prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST ||
       prefs.status === FOOD_STATUS_KEYS.SELECT_STATUS ||
@@ -572,7 +438,7 @@ function calculateSuggestedDiet() {
       return false;
     }
 
-    // Excluir se a caloria da comida for maior que o estômago
+    // Exclude if food calories exceed current stomach size
     if (item.Official_Calories_Game > stomachSize) {
       return false;
     }
@@ -580,82 +446,51 @@ function calculateSuggestedDiet() {
     return true;
   });
 
+  // Render the header with Goal Calories exactly as the UI design
+  let finalHtml = `<p class="calorie-goal">Goal Calories: <strong>${stomachSize} Kcal</strong></p><div class="diet-options-container">`;
+
   if (availableFoods.length === 0) {
-    listContainer.innerHTML = `<p style="color: red;">Goal Calories: ${stomachSize} Kcal</p><p style="color: red;">No suitable foods available based on your current evaluation. Please evaluate some items as GOOD, OK, or DELICIOUS (and not BAD/HORRIBLE).</p>`;
+    listContainer.innerHTML = finalHtml + `<p style="color: red;">No suitable foods available based on your current evaluation. Please evaluate some items as GOOD, OK, or DELICIOUS.</p></div>`;
     return;
   }
 
-  // --- Passo 2: OTIMIZAÇÃO POR BUSCA DE COMBINAÇÃO (Com Repetição e Maximização Calórica) ---
-
+  // Step 2: Optimization via Combination Search
   let bestDiets = [];
-  const MAX_ITEMS_TYPES = 6; // Máximo de TIPOS diferentes de alimentos na dieta
+  const MAX_ITEMS_TYPES = 6; 
   const MAX_ITERATIONS = 5000;
 
-  /**
-   * Gera uma dieta aleatória (pode ter repetição) que preenche o estômago.
-   */
   const generateRandomDiet = () => {
     let diet = [];
     let currentCalories = 0;
-
-    // 1. Seleciona aleatoriamente um POOL de alimentos (max 6 tipos diferentes)
-    const uniqueFoodCount = Math.min(
-      availableFoods.length,
-      2 + Math.floor(Math.random() * (MAX_ITEMS_TYPES - 1)),
-    );
-
+    const uniqueFoodCount = Math.min(availableFoods.length, 2 + Math.floor(Math.random() * (MAX_ITEMS_TYPES - 1)));
     const foodsToDrawFrom = [];
+
     while (foodsToDrawFrom.length < uniqueFoodCount) {
       const randomIndex = Math.floor(Math.random() * availableFoods.length);
       const food = availableFoods[randomIndex];
-      if (!foodsToDrawFrom.includes(food)) {
-        foodsToDrawFrom.push(food);
-      }
+      if (!foodsToDrawFrom.includes(food)) foodsToDrawFrom.push(food);
     }
 
-    // 2. Tenta preencher o estômago até o limite, usando repetição
-    let availableDraws = [...foodsToDrawFrom]; // Lista de itens que ainda podem ser adicionados
-    let attemptLimit = 100; // Limite de tentativas para evitar loop infinito
+    let availableDraws = [...foodsToDrawFrom];
+    let attemptLimit = 100;
 
-    // Otimização: Sempre tenta adicionar o item, mas se não couber, remove ele do pool temporariamente.
-    while (
-      currentCalories < stomachSize &&
-      availableDraws.length > 0 &&
-      attemptLimit > 0
-    ) {
-      // Escolhe um item aleatoriamente do pool restante
+    while (currentCalories < stomachSize && availableDraws.length > 0 && attemptLimit > 0) {
       const foodIndex = Math.floor(Math.random() * availableDraws.length);
       const foodToRepeat = availableDraws[foodIndex];
 
-      if (
-        currentCalories + foodToRepeat.Official_Calories_Game <=
-        stomachSize
-      ) {
+      if (currentCalories + foodToRepeat.Official_Calories_Game <= stomachSize) {
         diet.push(foodToRepeat);
         currentCalories += foodToRepeat.Official_Calories_Game;
-        // Mantém o item no pool, permitindo a repetição
       } else {
-        // Remove do pool de draws, pois não cabe mais
         availableDraws.splice(foodIndex, 1);
       }
       attemptLimit--;
     }
-
     return diet;
   };
 
-  /**
-   * Calcula os totais e o score de uma dieta.
-   */
   const analyzeDiet = (diet) => {
-    let totals = {
-      Carbs: 0,
-      Fat: 0,
-      Protein: 0,
-      Vitamins: 0,
-      TotalCalories: 0,
-    };
-
+    let totals = { Carbs: 0, Fat: 0, Protein: 0, Vitamins: 0, TotalCalories: 0 };
     if (diet.length === 0) return { score: Infinity, totals: totals };
 
     diet.forEach((food) => {
@@ -666,28 +501,21 @@ function calculateSuggestedDiet() {
       totals.TotalCalories += food.Official_Calories_Game;
     });
 
-    const score = calculateDietScore(totals);
-
-    // Retorna o resultado completo
-    return { diet, score, totals };
+    return { diet, score: calculateDietScore(totals), totals };
   };
 
   const resultsMap = new Map();
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     const diet = generateRandomDiet();
-    if (diet.length < 2) continue; // Ignora dietas de 0 ou 1 item
+    if (diet.length < 2) continue;
 
-    // Cria a chave única baseada em NOME + CONTAGEM (para dietas com repetição)
     const uniqueFoodCounts = diet.reduce((acc, food) => {
       acc[food.Food_Name] = (acc[food.Food_Name] || 0) + 1;
       return acc;
     }, {});
 
-    const dietKey = Object.keys(uniqueFoodCounts)
-      .sort()
-      .map((name) => `${name}:${uniqueFoodCounts[name]}`)
-      .join("|");
+    const dietKey = Object.keys(uniqueFoodCounts).sort().map((name) => `${name}:${uniqueFoodCounts[name]}`).join("|");
 
     if (!resultsMap.has(dietKey)) {
       const analysis = analyzeDiet(diet);
@@ -696,268 +524,176 @@ function calculateSuggestedDiet() {
     }
   }
 
-  // 3. Ordenar as dietas pelo menor score (melhor balanceamento)
-
-  // Critério de Ordenação OTIMIZADO:
-  // Ordem Primária: Score (menor é melhor)
-  // Ordem Secundária (Desempate): Total Calories (maior é melhor, pois enche mais o estômago)
+  // Sort by Balance Score primarily, then by Total Calories
   bestDiets.sort((a, b) => {
-    if (Math.abs(a.score - b.score) > 0.05) {
-      // Diferença de Score significativa (0.05 é um bom limite)
-      return a.score - b.score; // Prioriza o melhor Score
-    } else {
-      return b.totals.TotalCalories - a.totals.TotalCalories; // Se o Score é parecido, prioriza mais Calorias (melhor SP)
-    }
+    if (Math.abs(a.score - b.score) > 0.05) return a.score - b.score;
+    return b.totals.TotalCalories - a.totals.TotalCalories;
   });
 
-  // Pegar as 3 melhores
   const top3Diets = bestDiets.slice(0, 3);
 
   if (top3Diets.length === 0) {
-    listContainer.innerHTML = `<p style="color: red;">Goal Calories: ${stomachSize} Kcal</p><p style="color: red;">Could not find any diet combination that fits the stomach size limit and preferences.</p>`;
+    listContainer.innerHTML = finalHtml + `<p style="color: red;">Could not find any diet combination that fits the stomach size limit.</p></div>`;
     return;
   }
 
-  // --- Passo 3: Renderizar Resultados ---
-
-  let finalHtml = `<p class="calorie-goal">Goal Calories: <strong>${stomachSize} Kcal</strong></p><div class="diet-options-container">`;
-
+  // Step 3: Render Results
   top3Diets.forEach((diet, index) => {
     finalHtml += renderDietOption(diet, index + 1);
   });
+
   finalHtml += "</div>";
-  dietSuggestionContainer.innerHTML = finalHtml;
+  listContainer.innerHTML = finalHtml;
 }
 
-// --- Core Functions (Non-Global) ---
+// --- Core Functions ---
+function checkVersionUpgrade() {
+  const lastSeenVersion = localStorage.getItem(VERSION_STORAGE_KEY);
 
-/**
- * Initializes the application.
- */
+  // Se a versão gravada for diferente da atual (ou não existir)
+  if (lastSeenVersion !== CURRENT_VERSION) {
+    const msg = "🚀 ECO FOODCALC UPGRADE!\n\n" +
+                "I've updated the food database to use proper names with spaces. " +
+                "To ensure everything works perfectly, I STRONGLY recommend clicking 'RESET DATA'.\n\n" +
+                "Using the app without resetting is not recommended and has NOT been tested. " +
+                "Proceed at your own risk!\n\n" +
+                "Click OK to acknowledge. This message won't appear again until the next major update.";
+
+    alert(msg);
+    
+    // Grava que o usuário já viu este aviso desta versão
+    localStorage.setItem(VERSION_STORAGE_KEY, CURRENT_VERSION);
+  }
+}
 async function initApp() {
+  checkVersionUpgrade();
   sessionElement = document.getElementById("session-status");
   foodContainerStatus = document.getElementById("food-container-status");
-  foodContainer = document.getElementById("food-container");
-  columnRightContainer = document.getElementById("column-right");
-  dietSuggestionContainer = document.getElementById(
-    "diet-suggestion-container",
-  );
-  sessionElement.textContent = "Checking preferences...";
-  foodContainerStatus.innerHTML = "Loading food data..."; // Dynamic loading message
+  dietSuggestionContainer = document.getElementById("diet-suggestion-container");
+
+  if (sessionElement) sessionElement.textContent = "Checking preferences...";
 
   try {
     // 1. Load the JSON file
     const response = await fetch(FOOD_SOURCE_URL);
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
     foodData = await response.json();
 
-    // 2. Load user preferences, stomach size, and global tags
-    loadUserPreferences();
+    // 2. Load preferences and update session status
+    loadUserPreferences(); // Essa função internamente já define o texto do sessionElement
     loadStomachSize();
     loadGlobalTags();
 
-    // Carrega estados persistentes de UI
-    lastSelectedStatus =
-      localStorage.getItem(LAST_STATUS_KEY) || FOOD_STATUS_KEYS.DELICIOUS;
-    currentSortColumn =
-      localStorage.getItem(SORT_COLUMN_KEY) || "ORDER_PRIORITY"; // Usar ORDER_PRIORITY como default
+    // Load UI persistent states
+    lastSelectedStatus = localStorage.getItem(LAST_STATUS_KEY) || FOOD_STATUS_KEYS.DELICIOUS;
+    currentSortColumn = localStorage.getItem(SORT_COLUMN_KEY) || "ORDER_PRIORITY";
     currentSortOrder = localStorage.getItem(SORT_ORDER_KEY) || "desc";
 
-    // 3. Render the two main components (Evaluated List + Search)
+    // 3. Render initial lists
     renderFoodLists();
-    foodContainerStatus.innerHTML = ""; // Clear loading message
+    if (foodContainerStatus) foodContainerStatus.innerHTML = ""; 
+    
   } catch (error) {
-    console.error("Error loading or processing JSON:", error);
-    foodContainerStatus.innerHTML = `<p style="color: red;">Error loading ${FOOD_SOURCE_URL}. Please check the file name and format.</p>`;
-    sessionElement.textContent = "Failed to start session.";
+    console.error("Error starting app:", error);
+    if (foodContainerStatus) foodContainerStatus.innerHTML = `<p style="color: red;">Error loading data.</p>`;
+    if (sessionElement) sessionElement.textContent = "Failed to start session.";
   }
 
-  // 4. Fetch the last commit date (footer/header)
+  // 4. Fetch the last commit date
   fetchLastCommitDate();
 }
-
-/**
- * Renders the two main lists: Evaluated Foods Table and Search Box.
- */
 function renderFoodLists() {
-  // Separa as comidas em avaliadas e não avaliadas
-  const allFoods = [...foodData];
-  const evaluatedFoods = allFoods.filter((item) => {
-    const prefs = userPreferences[item.Food_Name];
-    return prefs && prefs.status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
-  });
-  const unevaluatedFoods = allFoods.filter((item) => {
-    const prefs = userPreferences[item.Food_Name];
-    return !prefs || prefs.status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
-  });
+  const evaluatedFoods = foodData.filter(item => userPreferences[item.Food_Name]?.status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST);
+  const unevaluatedFoods = foodData.filter(item => !userPreferences[item.Food_Name] || userPreferences[item.Food_Name].status === FOOD_STATUS_KEYS.REMOVE_FROM_LIST);
 
-  // CHAMA O ALGORITMO (Colunba Esquerda)
   calculateSuggestedDiet();
 
-  // --- COLUNA DIREITA (Tags + Busca) ---
-  document.querySelector("#favorite-food").innerHTML = generateSelectHtml(
-    "favorite",
-    evaluatedFoods,
-  );
-  document.querySelector("#worst-food").innerHTML = generateSelectHtml(
-    "worst",
-    evaluatedFoods,
-  );
+  document.querySelector("#favorite-food").innerHTML = generateSelectHtml("favorite", evaluatedFoods);
+  document.querySelector("#worst-food").innerHTML = generateSelectHtml("worst", evaluatedFoods);
 
   renderSearchInterface(unevaluatedFoods);
-
-  // --- TABELA DE AVALIADAS (Abaixo das colunas) ---
   renderEvaluatedTableComponent(evaluatedFoods);
 }
 
-/**
- * Renderiza o componente principal da tabela, separado do renderFoodLists.
- * Isso permite que a ordenação e a atualização de status a renderizem de forma independente.
- */
+// --- FUNÇÃO COM A LOGICA DE FILTRO INJETADA ---
 function renderEvaluatedTableComponent(foodsOverride) {
-  // Recalcula a lista de avaliados, caso não tenha sido passada
-  const foods =
-    foodsOverride ||
-    foodData.filter((item) => {
+  // Pega o valor do filtro no HTML (se não existir, assume ALL)
+  const filterElement = document.getElementById("status-filter");
+  const filterValue = filterElement ? filterElement.value : "ALL";
+
+  let foods = foodsOverride || foodData.filter((item) => {
       const prefs = userPreferences[item.Food_Name];
       return prefs && prefs.status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST;
-    });
+  });
+
+  // Filtra pelo status se o usuário selecionou algo específico
+  if (filterValue !== "ALL") {
+    foods = foods.filter(item => userPreferences[item.Food_Name].status === filterValue);
+  }
 
   const html = renderEvaluatedTable(foods);
   const foodTable = document.getElementById("food-table");
-  foodTable.innerHTML = html;
+  if (foodTable) foodTable.innerHTML = html;
 }
 
 /**
- * Renders the table for foods that have an explicit status set.
+ * Renders the table for foods with all UX/UI styles restored.
  */
 function renderEvaluatedTable(foods) {
   if (foods.length === 0) {
     return "<p>No foods evaluated yet. Use the search field above to add your first item!</p>";
   }
 
-  // --- LÓGICA DE ORDENAÇÃO FINAL ---
+  // --- SORTING LOGIC ---
   foods.sort((a, b) => {
     const key = currentSortColumn;
-    const order = currentSortOrder;
-
-    // Pega os timestamps para o desempate
     const timeA = userPreferences[a.Food_Name]?.timestamp || 0;
     const timeB = userPreferences[b.Food_Name]?.timestamp || 0;
-
-    // 1. ORDENAÇÃO PRINCIPAL (Pode ser uma Coluna Numérica ou ORDER_PRIORITY/Timestamp)
-    let comparison = 0;
-
-    if (key === "ORDER_PRIORITY") {
-      // Se a ordenação é a default (UX: Recém-adicionado no topo), ordena por timestamp
-      comparison = timeA - timeB;
-      // A ordem é sempre Decrescente para o timestamp, então invertemos.
-      return -comparison;
-    }
-
-    // Se for uma coluna numérica ou alfabética (o usuário clicou)
-    const valA = a[key];
-    const valB = b[key];
-
-    // Verifica o tipo de dado para a comparação (Números vs. Strings)
-    if (typeof valA === "number" && typeof valB === "number") {
-      comparison = valA - valB;
-    } else {
-      comparison = String(valA).localeCompare(String(valB));
-    }
-
-    // Aplica a ordem ASC/DESC
-    let finalComparison = order === "asc" ? comparison : -comparison;
-
-    // 2. Desempate pelo timestamp (sempre Decrescente)
-    // Se a ordenação da coluna resultar em empate (0), o item mais novo sobe.
-    if (finalComparison === 0) {
-      return timeB - timeA;
-    }
-    return finalComparison;
+    if (key === "ORDER_PRIORITY") return timeB - timeA;
+    const valA = a[key], valB = b[key];
+    let comp = typeof valA === "number" ? valA - valB : String(valA).localeCompare(String(valB));
+    return currentSortOrder === "asc" ? comp : -comp;
   });
 
-  // --- RENDERIZAÇÃO DA TABELA ---
-  let tableHtml = '<table class="food-list">';
+  // --- TABLE RENDERING WITH DESIGN CLASSES ---
+  let tableHtml = '<table class="food-table">'; // Use food-table instead of food-list
   tableHtml += "<thead><tr>";
 
-  // Cabeçalhos
-  const headers = [
-    "Food Name",
-    "Carbs",
-    "Fat",
-    "Protein",
-    "Vitamins",
-    "Calories (Game)",
-  ];
+  const headers = ["Food Name", "Carbs", "Fat", "Protein", "Vitamins", "Calories (Game)"];
 
   headers.forEach((headerName) => {
     const dataKey = COLUMN_MAPPING[headerName];
     const isSortable = SORTABLE_COLUMNS.includes(headerName);
 
-    // Se não for ordenável, não permite o clique
     if (!isSortable) {
-      // Food Name
-      tableHtml += `<th class="no-sort"><div class= "th-content">${headerName}</div></th>`;
+      tableHtml += `<th class="no-sort"><div class="th-content">${headerName}</div></th>`;
       return;
     }
 
     const isSorted = dataKey === currentSortColumn;
     const icon = isSorted
-      ? currentSortOrder === "asc"
-        ? "<i class='ph ph-arrow-up sort-icon'></i>"
-        : "<i class='ph ph-arrow-down sort-icon'></i>"
+      ? (currentSortOrder === "asc" ? "<i class='ph ph-arrow-up sort-icon'></i>" : "<i class='ph ph-arrow-down sort-icon'></i>")
       : "<i class='ph ph-arrows-down-up sort-icon'></i>";
     const sortedClass = isSorted ? `sorted-${currentSortOrder}` : "";
 
     tableHtml += `<th onclick="sortTable('${headerName}')" class="${sortedClass}">
-    <div class= "th-content">${headerName}${icon}</div>
-     </th>`;
+    <div class="th-content">${headerName}${icon}</div></th>`;
   });
 
-  // Coluna Status (Não Ordenável)
-  tableHtml += '<th class="no-sort"><div class= "th-content">Status</div></th>';
-  tableHtml += '<th class="no-sort"><div class= "th-content"></div></th>';
-  tableHtml += "</tr></thead><tbody>";
+  tableHtml += '<th class="no-sort"><div class="th-content">Status</div></th>';
+  tableHtml += '<th class="no-sort"><div class="th-content"></div></th></tr></thead><tbody>';
 
   foods.forEach((item) => {
     const name = item.Food_Name;
     const prefs = userPreferences[name];
-
-    // Variáveis para a tag global
     const isFavorite = name === favoriteFood;
     const isWorst = name === worstFood;
-    const needsAttention = prefs.status === FOOD_STATUS_KEYS.SELECT_STATUS;
 
-    // Aplica a classe de destaque
+    // Apply highlighting classes (row-favorite, row-worst, row-attention)
     let rowClass = "";
-    let statusCellContent;
-
-    if (isFavorite) {
-      rowClass = "row-favorite";
-      statusCellContent = `<span class="status-tag favorite">★ FAVORITE</span>`;
-    } else if (isWorst) {
-      rowClass = "row-worst";
-      statusCellContent = `<span class="status-tag worst">☠ WORST</span>`;
-    } else {
-      // Se não for Favorite/Worst, mostra o dropdown normal
-      if (needsAttention) {
-        rowClass = "row-attention";
-      }
-      statusCellContent = `
-             <select class="status-select" onchange="updateFoodStatus('${name}', this.value)">
-                 ${STATUS_OPTIONS.map((s) => {
-                   // Não mostra 'Remove from list' ou '--- SELECT STATUS ---' na tabela (só no dropdown de ação)
-                   if (s === FOOD_STATUS_KEYS.SELECT_STATUS) return "";
-                   if (s === FOOD_STATUS_KEYS.REMOVE_FROM_LIST) return "";
-
-                   return `<option value="${s}" ${s === prefs.status ? "selected" : ""}>${s}</option>`;
-                 }).join("")}
-             </select>
-         `;
-    }
+    if (isFavorite) rowClass = "row-favorite";
+    else if (isWorst) rowClass = "row-worst";
+    else if (prefs.status === FOOD_STATUS_KEYS.SELECT_STATUS) rowClass = "row-attention";
 
     tableHtml += `<tr class="${rowClass}">
          <td>${name}</td>
@@ -966,203 +702,85 @@ function renderEvaluatedTable(foods) {
          <td>${item.Protein}</td>
          <td>${item.Vitamins}</td>
          <td>${item.Official_Calories_Game}</td>
-         <td>${statusCellContent}</td>
-         <td><button onclick="removeItemFromPreferences('${name}')" class="reset-button button button-danger">
-             <i class="ph ph-trash icon"></i>Remove
-         </button></td>
+         <td>
+             <select class="status-select" onchange="updateFoodStatus('${name}', this.value)">
+                 ${STATUS_OPTIONS.filter(s => s !== FOOD_STATUS_KEYS.SELECT_STATUS && s !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST)
+                   .map(s => `<option value="${s}" ${s === prefs.status ? "selected" : ""}>${s}</option>`).join("")}
+             </select>
+         </td>
+         <td>
+             <button onclick="removeItemFromPreferences('${name}')" class="button button-danger">
+                 <i class="ph ph-trash icon"></i>Remove
+             </button>
+         </td>
      </tr>`;
   });
 
   tableHtml += "</tbody></table>";
   return tableHtml;
 }
-const generateSelectHtml = (tagType, foods) => {
+
+function generateSelectHtml(tagType, foods) {
   const currentValue = tagType === "favorite" ? favoriteFood : worstFood;
-  // Lista de opções, garantindo que o item CURRENTLY SELECIONADO seja marcado
-  const options = foods
-    .map((item) => {
-      const name = item.Food_Name;
-      const isSelected = name === currentValue;
-      return `<option value="${name}" ${isSelected ? "selected" : ""}>${name}</option>`;
-    })
-    .join("");
-
-  return `
-      <option value="" ${currentValue === "" ? "selected" : ""}>--- Select ---</option>
-      ${options}
-      <option value="" disabled>---</option>
-      <option value="">(None)</option>
-   `;
-};
-/**
- * Renders the search/selection interface (using datalist for type-ahead search).
- */
-function renderSearchInterface(foods) {
-  // Filtra as opções que queremos para o dropdown de Status (excluindo Remove/Select)
-  const ratingOptions = STATUS_OPTIONS.filter(
-    (s) =>
-      s !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST &&
-      s !== FOOD_STATUS_KEYS.SELECT_STATUS,
-  );
-
-  // Cria o HTML para o dropdown de Status
-  const statusSelect = document.querySelector("#food-status");
-  statusSelect.innerHTML = ratingOptions
-    .map((s) => {
-      const isSelected = s === lastSelectedStatus;
-      const defaultLabel = s === FOOD_STATUS_KEYS.DELICIOUS ? " (Default)" : "";
-      return `<option value="${s}" ${isSelected ? "selected" : ""}>${s}${defaultLabel}</option>`;
-    })
-    .join("");
-
-  // Cria a lista de opções para o datalist
-  const options = foods
-    .map((item) => `<option value="${item.Food_Name}">`)
-    .join("");
-  const foodDatalist = document.querySelector("#food-datalist");
-  foodDatalist.innerHTML = options;
+  const options = foods.map(item => `<option value="${item.Food_Name}" ${item.Food_Name === currentValue ? "selected" : ""}>${item.Food_Name}</option>`).join("");
+  return `<option value="">--- Select ---</option>${options}<option value="">(None)</option>`;
 }
 
-// --- Core Functions (Non-Global) ---
+function renderSearchInterface(foods) {
+  const ratingOptions = STATUS_OPTIONS.filter(s => s !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST && s !== FOOD_STATUS_KEYS.SELECT_STATUS);
+  document.querySelector("#food-status").innerHTML = ratingOptions.map(s => `<option value="${s}" ${s === lastSelectedStatus ? "selected" : ""}>${s}</option>`).join("");
+  document.querySelector("#food-datalist").innerHTML = foods.map(item => `<option value="${item.Food_Name}">`).join("");
+}
 
-/**
- * Loads preferences from localStorage or sets initial 'Remove from list' status.
- */
 function loadUserPreferences() {
   const storedData = localStorage.getItem(DATA_STORAGE_KEY);
 
   if (storedData) {
     userPreferences = JSON.parse(storedData);
-    sessionElement.textContent = "Preferences loaded.";
-
-    // Adiciona timestamp a itens antigos que não têm (para garantir a ordenação)
+    if (sessionElement) sessionElement.textContent = "Preferences loaded.";
+    
+    // Check for missing timestamps in old data
     let needsSave = false;
     for (const name in userPreferences) {
-      if (
-        userPreferences[name].status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST &&
-        userPreferences[name].timestamp === undefined
-      ) {
+      if (userPreferences[name].status !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST && userPreferences[name].timestamp === undefined) {
         userPreferences[name].timestamp = Date.now();
         needsSave = true;
       }
     }
     if (needsSave) saveUserPreferences();
   } else {
-    // Initialize preferences: every item starts as 'Remove from list'
+    // Initialize new session
     foodData.forEach((item) => {
-      const name = item.Food_Name;
-      userPreferences[name] = {
+      userPreferences[item.Food_Name] = {
         status: FOOD_STATUS_KEYS.REMOVE_FROM_LIST,
         timestamp: 0,
       };
     });
     saveUserPreferences();
-    sessionElement.textContent =
-      "New session initialized (All set to Remove from list).";
+    if (sessionElement) sessionElement.textContent = "New session initialized.";
   }
 }
-
-/**
- * Saves current user preferences to localStorage.
- */
-function saveUserPreferences() {
-  localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(userPreferences));
+function loadStomachSize() {
+  stomachSize = parseInt(localStorage.getItem(STOMACH_SIZE_KEY)) || 3000;
+  if (document.getElementById("stomach-size-input")) document.getElementById("stomach-size-input").value = stomachSize;
 }
 
-/**
- * Loads global tags (Favorite/Worst) from localStorage.
- */
 function loadGlobalTags() {
   favoriteFood = localStorage.getItem(FAVORITE_KEY) || "";
   worstFood = localStorage.getItem(WORST_KEY) || "";
 }
 
-/**
- * Saves the global favorite/worst tag to localStorage.
- */
-function saveGlobalTag(tagKey, foodName) {
-  localStorage.setItem(tagKey, foodName);
-}
+function saveUserPreferences() { localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(userPreferences)); }
+function saveGlobalTag(key, val) { localStorage.setItem(key, val); }
+function saveStomachSize() { localStorage.setItem(STOMACH_SIZE_KEY, stomachSize); }
 
-/**
- * Loads the Stomach Size from localStorage or defaults to 3000.
- */
-function loadStomachSize() {
-  const storedSize = localStorage.getItem(STOMACH_SIZE_KEY);
-  if (storedSize) {
-    stomachSize = parseInt(storedSize);
-  }
-  // Update the input field with the loaded/default value
-  const inputElement = document.getElementById("stomach-size-input");
-  if (inputElement) inputElement.value = stomachSize;
-}
-
-/**
- * Saves the Stomach Size to localStorage.
- */
-function saveStomachSize() {
-  localStorage.setItem(STOMACH_SIZE_KEY, stomachSize);
-}
-
-/**
- * Fetches the date of the last commit from the GitHub API.
- */
 async function fetchLastCommitDate() {
   const dateElement = document.getElementById("last-update-date");
-  dateElement.textContent = "fetching commit data..."; // Dynamic loading
-
-  const repoOwner = "Crazy-Spy";
-  const repoName = "EcoFoodCalc";
-  const branchName = "main";
-  const apiURL = `https://api.github.com/repos/${repoOwner}/${repoName}/commits/${branchName}`;
-
   try {
-    // Check local storage for cached data (using ETag for efficiency)
-    const cachedDate = localStorage.getItem("last-commit-date");
-    const etag = localStorage.getItem("last-commit-etag") || "";
-
-    const response = await fetch(apiURL, {
-      headers: {
-        "If-None-Match": etag,
-      },
-    });
-
-    if (response.status === 304) {
-      // Not Modified: use cached date
-      if (cachedDate) {
-        dateElement.textContent = cachedDate;
-        return;
-      }
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        `GitHub API error: ${response.status} ${response.statusText}`,
-      );
-    }
-
+    const response = await fetch(`https://api.github.com/repos/Crazy-Spy/EcoFoodCalc/commits/main`);
     const data = await response.json();
-    const lastCommitDate = new Date(data.commit.author.date);
-
-    // Format: DD/MM/YYYY HH:MM (24h format)
-    const formattedDate = lastCommitDate.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-
-    dateElement.textContent = formattedDate;
-
-    // Save new data to localStorage
-    localStorage.setItem("last-commit-date", formattedDate);
-    localStorage.setItem("last-commit-etag", response.headers.get("ETag"));
-  } catch (error) {
-    console.error("Failed to fetch GitHub commit date:", error);
-    dateElement.textContent = "Error fetching date.";
-  }
+    dateElement.textContent = new Date(data.commit.author.date).toLocaleDateString("pt-BR");
+  } catch (e) { dateElement.textContent = "N/A"; }
 }
 
 document.addEventListener("DOMContentLoaded", initApp);

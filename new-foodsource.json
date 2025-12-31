@@ -256,14 +256,6 @@
         "Official_Calories_Game":  1000
     },
     {
-        "Food_Name":  "Campfire Salad",
-        "Carbs":  0,
-        "Fat":  0,
-        "Protein":  0,
-        "Vitamins":  0,
-        "Official_Calories_Game":  0
-    },
-    {
         "Food_Name":  "Campfire Stew",
         "Carbs":  5,
         "Fat":  9,
@@ -456,14 +448,6 @@
         "Official_Calories_Game":  10
     },
     {
-        "Food_Name":  "Creosote Flower",
-        "Carbs":  0,
-        "Fat":  0,
-        "Protein":  0,
-        "Vitamins":  0,
-        "Official_Calories_Game":  0
-    },
-    {
         "Food_Name":  "Crimini Mushrooms",
         "Carbs":  2,
         "Fat":  1,
@@ -582,14 +566,6 @@
         "Protein":  8,
         "Vitamins":  2,
         "Official_Calories_Game":  500
-    },
-    {
-        "Food_Name":  "Flax Flower",
-        "Carbs":  0,
-        "Fat":  0,
-        "Protein":  0,
-        "Vitamins":  0,
-        "Official_Calories_Game":  0
     },
     {
         "Food_Name":  "Flaxseed Oil",
@@ -888,14 +864,6 @@
         "Official_Calories_Game":  120
     },
     {
-        "Food_Name":  "Orchid",
-        "Carbs":  0,
-        "Fat":  0,
-        "Protein":  0,
-        "Vitamins":  0,
-        "Official_Calories_Game":  0
-    },
-    {
         "Food_Name":  "Papaya",
         "Carbs":  2,
         "Fat":  0,
@@ -1160,14 +1128,6 @@
         "Official_Calories_Game":  50
     },
     {
-        "Food_Name":  "Sun Butter",
-        "Carbs":  0,
-        "Fat":  0,
-        "Protein":  0,
-        "Vitamins":  0,
-        "Official_Calories_Game":  0
-    },
-    {
         "Food_Name":  "Sun Cheese",
         "Carbs":  2,
         "Fat":  12,
@@ -1262,14 +1222,6 @@
         "Protein":  0,
         "Vitamins":  0,
         "Official_Calories_Game":  10
-    },
-    {
-        "Food_Name":  "Trillium Flower",
-        "Carbs":  0,
-        "Fat":  0,
-        "Protein":  0,
-        "Vitamins":  0,
-        "Official_Calories_Game":  0
     },
     {
         "Food_Name":  "Vegetable Medley",
