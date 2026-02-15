@@ -83,6 +83,17 @@
                             />
                         </div>
                         <div class="form-group">
+                            <label for="meal-quantity-input">Number of Meals:</label>
+                            <input
+                                type="number"
+                                id="meal-quantity-input"
+                                value="1"
+                                min="1"
+                                max="100"
+                                onchange="updateMealQuantity(this.value)"
+                            />
+                        </div>
+                        <div class="form-group">
                             <label for="favorite-food">Favorite Food:</label>
                             <select
                                 id="favorite-food"

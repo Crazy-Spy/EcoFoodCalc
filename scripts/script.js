@@ -42,6 +42,7 @@ let worstFood = "";
 let lastSelectedStatus = FOOD_STATUS_KEYS.DELICIOUS;
 let currentSortColumn = "ORDER_PRIORITY";
 let currentSortOrder = "desc";
+let mealQuantity = 1;
 
 // Elementos da UI (variáveis para serem usadas em várias funções)
 let sessionElement;
@@ -128,6 +129,11 @@ function updateStomachSize(newValue) {
   saveStomachSize();
   console.log(`Stomach size updated to ${stomachSize} kcal.`);
   renderFoodLists(); // Re-render para atualizar a sugestão
+}
+
+function updateMealQuantity(newValue) {
+    mealQuantity = parseInt(newValue) || 1;
+    renderFoodLists(); // Re-renderiza para atualizar os números na dieta sugerida
 }
 
 /**
@@ -386,12 +392,17 @@ function renderDietOption(dietAnalysis, optionNumber) {
     return acc;
   }, {});
 
-  const foodListHtml = Object.values(foodCounts).map(item => `
+  // Aqui está o pulo do gato: multiplicamos o item.count pela quantidade de refeições desejada
+  const foodListHtml = Object.values(foodCounts).map(item => {
+    const totalQuantity = item.count * (typeof mealQuantity !== 'undefined' ? mealQuantity : 1);
+    
+    return `
     <li class='food-tag'>
-        <div class='food-tag-name'>${item.count}x ${item.food.Food_Name}</div>
+        <div class='food-tag-name'>${totalQuantity}x ${item.food.Food_Name}</div>
         <div class='food-tag-calories'>Calories: <span class="food-tag-calories-value">${item.food.Official_Calories_Game} Kcal</span></div>
-        <div class='food-tag-status'>Status: <span class="food-tag-status-value">${userPreferences[item.food.food_Name]?.status || userPreferences[item.food.Food_Name]?.status}</span></div>
-    </li>`).join("");
+        <div class='food-tag-status'>Status: <span class="food-tag-status-value">${userPreferences[item.food.Food_Name]?.status}</span></div>
+    </li>`;
+  }).join("");
 
   let recommendedTag = isOptimal ? `<span class="recommended-tag"><i class="ph-fill ph-star icon"></i>Recommended</span>` : "";
 
