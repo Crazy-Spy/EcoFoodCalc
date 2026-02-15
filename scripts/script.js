@@ -392,13 +392,18 @@ function renderDietOption(dietAnalysis, optionNumber) {
     return acc;
   }, {});
 
-  // Aqui está o pulo do gato: multiplicamos o item.count pela quantidade de refeições desejada
   const foodListHtml = Object.values(foodCounts).map(item => {
-    const totalQuantity = item.count * (typeof mealQuantity !== 'undefined' ? mealQuantity : 1);
+    const perMeal = item.count;
+    const totalBatch = item.count * (typeof mealQuantity !== 'undefined' ? mealQuantity : 1);
     
+    // Mostra o total e, se houver multiplicador, a dose por refeição
+    const displayQty = (typeof mealQuantity !== 'undefined' && mealQuantity > 1) 
+        ? `${totalBatch}x <small style="opacity: 0.7;">(${perMeal}x per meal)</small>` 
+        : `${perMeal}x`;
+
     return `
     <li class='food-tag'>
-        <div class='food-tag-name'>${totalQuantity}x ${item.food.Food_Name}</div>
+        <div class='food-tag-name'>${displayQty} ${item.food.Food_Name}</div>
         <div class='food-tag-calories'>Calories: <span class="food-tag-calories-value">${item.food.Official_Calories_Game} Kcal</span></div>
         <div class='food-tag-status'>Status: <span class="food-tag-status-value">${userPreferences[item.food.Food_Name]?.status}</span></div>
     </li>`;
@@ -426,7 +431,6 @@ function renderDietOption(dietAnalysis, optionNumber) {
          </div>
      </div>`;
 }
-
 function calculateSuggestedDiet() {
   const listContainer = dietSuggestionContainer;
 
