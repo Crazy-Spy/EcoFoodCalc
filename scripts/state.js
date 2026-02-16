@@ -9,6 +9,7 @@ let worstFood = "";
 let lastSelectedStatus = FOOD_STATUS_KEYS.DELICIOUS;
 let currentSortColumn = "ORDER_PRIORITY";
 let currentSortOrder = "desc";
+let lastDietResult = null;
 
 export const getFoodData = () => foodData;
 export const setFoodData = (data) => { foodData = data; };
@@ -36,3 +37,6 @@ export const setCurrentSortColumn = (col) => { currentSortColumn = col; };
 
 export const getCurrentSortOrder = () => currentSortOrder;
 export const setCurrentSortOrder = (order) => { currentSortOrder = order; };
+
+export const getLastDietResult = () => lastDietResult;
+export const setLastDietResult = (result) => { lastDietResult = result; };

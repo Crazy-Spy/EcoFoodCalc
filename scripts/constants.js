@@ -26,6 +26,7 @@ export const PIE_COLORS = {
 export const STATUS_OPTIONS = Object.values(FOOD_STATUS_KEYS);
 export const DATA_STORAGE_KEY = "eco_food_preferences";
 export const STOMACH_SIZE_KEY = "eco_stomach_size";
+export const MEAL_QUANTITY_KEY = "eco_meal_quantity";
 export const FAVORITE_KEY = "eco_favorite_food";
 export const WORST_KEY = "eco_worst_food";
 export const LAST_STATUS_KEY = "eco_last_selected_status";

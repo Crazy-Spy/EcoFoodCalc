@@ -1,6 +1,7 @@
 import {
   DATA_STORAGE_KEY,
   STOMACH_SIZE_KEY,
+  MEAL_QUANTITY_KEY,
   FAVORITE_KEY,
   WORST_KEY,
   LAST_STATUS_KEY,
@@ -18,6 +19,8 @@ import {
   setUserPreferences,
   getStomachSize,
   setStomachSize,
+  getMealQuantity,
+  setMealQuantity,
   getFavoriteFood,
   setFavoriteFood,
   getWorstFood,
@@ -40,6 +43,10 @@ export function saveGlobalTag(key, val) {
 
 export function saveStomachSize() {
   localStorage.setItem(STOMACH_SIZE_KEY, getStomachSize());
+}
+
+export function saveMealQuantity() {
+  localStorage.setItem(MEAL_QUANTITY_KEY, getMealQuantity());
 }
 
 export function saveLastSelectedStatus(status) {
@@ -88,6 +95,11 @@ export function loadStomachSize() {
   setStomachSize(size);
 }
 
+export function loadMealQuantity() {
+  const quantity = parseInt(localStorage.getItem(MEAL_QUANTITY_KEY)) || 1;
+  setMealQuantity(quantity);
+}
+
 export function loadGlobalTags() {
   setFavoriteFood(localStorage.getItem(FAVORITE_KEY) || "");
   setWorstFood(localStorage.getItem(WORST_KEY) || "");
@@ -125,6 +137,7 @@ export function resetPreferences() {
   ) {
     localStorage.removeItem(DATA_STORAGE_KEY);
     localStorage.removeItem(STOMACH_SIZE_KEY);
+    localStorage.removeItem(MEAL_QUANTITY_KEY);
     localStorage.removeItem(FAVORITE_KEY);
     localStorage.removeItem(WORST_KEY);
     localStorage.removeItem(LAST_STATUS_KEY);
@@ -143,6 +156,7 @@ export function exportUserData() {
     timestamp: new Date().toISOString(),
     preferences: localStorage.getItem(DATA_STORAGE_KEY),
     stomachSize: localStorage.getItem(STOMACH_SIZE_KEY),
+    mealQuantity: localStorage.getItem(MEAL_QUANTITY_KEY),
     favoriteFood: localStorage.getItem(FAVORITE_KEY),
     worstFood: localStorage.getItem(WORST_KEY),
     lastSelectedStatus: localStorage.getItem(LAST_STATUS_KEY),
@@ -176,6 +190,8 @@ export function importUserData(file) {
       localStorage.setItem(DATA_STORAGE_KEY, importedData.preferences);
       if (importedData.stomachSize)
         localStorage.setItem(STOMACH_SIZE_KEY, importedData.stomachSize);
+      if (importedData.mealQuantity)
+        localStorage.setItem(MEAL_QUANTITY_KEY, importedData.mealQuantity);
       if (importedData.favoriteFood)
         localStorage.setItem(FAVORITE_KEY, importedData.favoriteFood);
       if (importedData.worstFood)

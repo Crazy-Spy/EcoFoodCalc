@@ -101,9 +101,9 @@ function renderDietOption(dietAnalysis, optionNumber) {
     : `Option ${optionNumber}`;
   const itemClass = isOptimal ? "optimal-diet-box" : "alternative-diet-box";
   const userPreferences = getUserPreferences();
-  const mealQuantity = getMealQuantity();
+  const mealQuantity = getMealQuantity() || 1;
 
-  // Agrupa os alimentos repetidos para o visual de tags do design
+  // Group repeated foods
   const foodCounts = dietAnalysis.diet.reduce((acc, food) => {
     const key = food.Food_Name;
     if (!acc[key]) acc[key] = { count: 0, food: food };
@@ -111,28 +111,22 @@ function renderDietOption(dietAnalysis, optionNumber) {
     return acc;
   }, {});
 
-  const foodListHtml = Object.values(foodCounts)
+  const foods = Object.values(foodCounts);
+
+  // 1. Eat List (Per Meal)
+  const eatListHtml = foods
     .map((item) => {
       const perMeal = item.count;
-      const totalBatch =
-        item.count * (typeof mealQuantity !== "undefined" ? mealQuantity : 1);
+      const status = userPreferences[item.food.Food_Name]?.status || "Unknown";
+      return `<li><strong>${perMeal}x</strong> ${item.food.Food_Name} - <span class="u-bold">${status}</span></li>`;
+    })
+    .join("");
 
-      // Mostra o total e, se houver multiplicador, a dose por refeição
-      const displayQty =
-        typeof mealQuantity !== "undefined" && mealQuantity > 1
-          ? `${totalBatch}x <small style="opacity: 0.7;">(${perMeal}x per meal)</small>`
-          : `${perMeal}x`;
-
-      return `
-    <li class='food-tag'>
-        <div class='food-tag-name'>${displayQty} ${item.food.Food_Name}</div>
-        <div class='food-tag-calories'>Calories: <span class="food-tag-calories-value">${
-          item.food.Official_Calories_Game
-        } Kcal</span></div>
-        <div class='food-tag-status'>Status: <span class="food-tag-status-value">${
-          userPreferences[item.food.Food_Name]?.status
-        }</span></div>
-    </li>`;
+  // 2. Shopping List (Total)
+  const shopListHtml = foods
+    .map((item) => {
+      const totalBatch = item.count * mealQuantity;
+      return `<li><strong>${totalBatch}x</strong> ${item.food.Food_Name}</li>`;
     })
     .join("");
 
@@ -156,9 +150,24 @@ function renderDietOption(dietAnalysis, optionNumber) {
                     2
                   )}</p>
                  </div>
-                 <ul class='food-tags'>
-                     ${foodListHtml}
-                 </ul>
+
+                 <div class="diet-cards-container">
+                    <!-- EAT CARD -->
+                    <div class="diet-card eat-card">
+                        <h5>EAT (Per Meal)</h5>
+                        <ul>
+                            ${eatListHtml}
+                        </ul>
+                    </div>
+                    <!-- SHOPPING CARD -->
+                    <div class="diet-card shop-card">
+                        <h5>SHOPPING LIST (For ${mealQuantity} Meals)</h5>
+                        <ul>
+                            ${shopListHtml}
+                        </ul>
+                    </div>
+                 </div>
+
              </div>
              ${renderNutrientDistribution(dietAnalysis)}
          </div>
