@@ -116,7 +116,7 @@ namespace Eco.Mods.TechTree
         }
 
         [ChatCommand("Suggests an optimal diet based on your stomach size and tastes.", "diet")]
-        public static void Diet(User user, string arg = "")
+        public static void SuggestDiet(User user, string arg = "")
         {
             try
             {
