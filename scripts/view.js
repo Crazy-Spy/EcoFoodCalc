@@ -101,9 +101,9 @@ function renderDietOption(dietAnalysis, optionNumber) {
     : `Option ${optionNumber}`;
   const itemClass = isOptimal ? "optimal-diet-box" : "alternative-diet-box";
   const userPreferences = getUserPreferences();
-  const mealQuantity = getMealQuantity();
+  const mealQuantity = getMealQuantity() || 1;
 
-  // Agrupa os alimentos repetidos para o visual de tags do design
+  // Group repeated foods
   const foodCounts = dietAnalysis.diet.reduce((acc, food) => {
     const key = food.Food_Name;
     if (!acc[key]) acc[key] = { count: 0, food: food };
@@ -111,28 +111,22 @@ function renderDietOption(dietAnalysis, optionNumber) {
     return acc;
   }, {});
 
-  const foodListHtml = Object.values(foodCounts)
+  const foods = Object.values(foodCounts);
+
+  // 1. Eat List (Per Meal)
+  const eatListHtml = foods
     .map((item) => {
       const perMeal = item.count;
-      const totalBatch =
-        item.count * (typeof mealQuantity !== "undefined" ? mealQuantity : 1);
+      const status = userPreferences[item.food.Food_Name]?.status || "Unknown";
+      return `<li><strong>${perMeal}x</strong> ${item.food.Food_Name} - <span class="u-bold">${status}</span></li>`;
+    })
+    .join("");
 
-      // Mostra o total e, se houver multiplicador, a dose por refeição
-      const displayQty =
-        typeof mealQuantity !== "undefined" && mealQuantity > 1
-          ? `${totalBatch}x <small style="opacity: 0.7;">(${perMeal}x per meal)</small>`
-          : `${perMeal}x`;
-
-      return `
-    <li class='food-tag'>
-        <div class='food-tag-name'>${displayQty} ${item.food.Food_Name}</div>
-        <div class='food-tag-calories'>Calories: <span class="food-tag-calories-value">${
-          item.food.Official_Calories_Game
-        } Kcal</span></div>
-        <div class='food-tag-status'>Status: <span class="food-tag-status-value">${
-          userPreferences[item.food.Food_Name]?.status
-        }</span></div>
-    </li>`;
+  // 2. Shopping List (Total)
+  const shopListHtml = foods
+    .map((item) => {
+      const totalBatch = item.count * mealQuantity;
+      return `<li><strong>${totalBatch}x</strong> ${item.food.Food_Name}</li>`;
     })
     .join("");
 
@@ -156,9 +150,24 @@ function renderDietOption(dietAnalysis, optionNumber) {
                     2
                   )}</p>
                  </div>
-                 <ul class='food-tags'>
-                     ${foodListHtml}
-                 </ul>
+
+                 <div class="diet-cards-container">
+                    <!-- EAT CARD -->
+                    <div class="diet-card eat-card">
+                        <h5>Eat<br>(Per Meal)</h5>
+                        <ul>
+                            ${eatListHtml}
+                        </ul>
+                    </div>
+                    <!-- SHOPPING CARD -->
+                    <div class="diet-card shop-card">
+                        <h5>Shopping List<br>(For ${mealQuantity} Meals)</h5>
+                        <ul>
+                            ${shopListHtml}
+                        </ul>
+                    </div>
+                 </div>
+
              </div>
              ${renderNutrientDistribution(dietAnalysis)}
          </div>
@@ -293,32 +302,61 @@ export function generateSelectHtml(tagType, foods) {
 
 // --- DOM Manipulation ---
 
+export function renderDietControls() {
+  const controlsContainer = document.getElementById("diet-controls-container");
+  if (!controlsContainer) return;
+
+  const mealQuantity = getMealQuantity() || 1;
+
+  // Check if controls already exist to avoid replacing them (and losing focus)
+  const existingInput = document.getElementById("meal-quantity-input");
+  if (existingInput) {
+      if (existingInput.value != mealQuantity) {
+          existingInput.value = mealQuantity;
+      }
+      return;
+  }
+
+  controlsContainer.innerHTML = `
+        <div class="diet-controls">
+            <div class="form-group-row">
+                <label for="meal-quantity-input">Number of meals:</label>
+                <input
+                    type="number"
+                    id="meal-quantity-input"
+                    value="${mealQuantity}"
+                    min="1"
+                    max="100"
+                    onchange="window.updateMealQuantity(this.value)"
+                />
+                <button onclick="window.refreshUI()" class="button button-primary">
+                    <i class="ph ph-arrows-clockwise icon"></i> New Diet Suggestion
+                </button>
+            </div>
+        </div>`;
+}
+
 export function renderSuggestedDiet(result) {
   const listContainer = document.getElementById("diet-suggestion-container");
-  const stomachSize = getStomachSize();
+  if (!listContainer) return;
 
-  let finalHtml = `<p class="calorie-goal">Goal Calories: <strong>${stomachSize} Kcal</strong></p><div class="diet-options-container">`;
+  let contentHtml = `<div class="diet-options-container">`;
 
   if (result.error) {
     if (result.error === "NO_SUITABLE_FOODS") {
-      listContainer.innerHTML =
-        finalHtml +
-        `<p style="color: red;">No suitable foods available based on your current evaluation. Please evaluate some items as GOOD, OK, or DELICIOUS.</p></div>`;
+      contentHtml += `<p style="color: red;">No suitable foods available based on your current evaluation. Please evaluate some items as GOOD, OK, or DELICIOUS.</p>`;
     } else if (result.error === "NO_COMBINATION_FOUND") {
-      listContainer.innerHTML =
-        finalHtml +
-        `<p style="color: red;">Could not find any diet combination that fits the stomach size limit.</p></div>`;
+      contentHtml += `<p style="color: red;">Could not find any diet combination that fits the stomach size limit.</p>`;
     }
-    return;
+  } else {
+    // Render Results
+    result.diets.forEach((diet, index) => {
+      contentHtml += renderDietOption(diet, index + 1);
+    });
   }
 
-  // Render Results
-  result.diets.forEach((diet, index) => {
-    finalHtml += renderDietOption(diet, index + 1);
-  });
-
-  finalHtml += "</div>";
-  listContainer.innerHTML = finalHtml;
+  contentHtml += "</div>";
+  listContainer.innerHTML = contentHtml;
 }
 
 export function renderSearchInterface(foods) {

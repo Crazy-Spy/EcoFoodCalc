@@ -24,6 +24,8 @@ import {
   setWorstFood,
   getLastSelectedStatus,
   setLastSelectedStatus,
+  getLastDietResult,
+  setLastDietResult,
   getCurrentSortColumn,
   setCurrentSortColumn,
   getCurrentSortOrder,
@@ -33,10 +35,12 @@ import {
 import {
   loadUserPreferences,
   loadStomachSize,
+  loadMealQuantity,
   loadGlobalTags,
   loadUIState,
   saveUserPreferences,
   saveStomachSize,
+  saveMealQuantity,
   saveGlobalTag,
   saveLastSelectedStatus,
   checkVersionUpgrade,
@@ -45,6 +49,7 @@ import {
 import { getSuggestedDiets } from "./logic.js";
 
 import {
+  renderDietControls,
   renderSuggestedDiet,
   renderSearchInterface,
   renderEvaluatedTableComponent,
@@ -73,7 +78,9 @@ export function refreshUI() {
   );
 
   // 1. Calculate and Render Suggested Diet
+  renderDietControls();
   const dietResult = getSuggestedDiets();
+  setLastDietResult(dietResult);
   renderSuggestedDiet(dietResult);
 
   // 2. Render Selects
@@ -155,7 +162,14 @@ export function updateStomachSize(newValue) {
 export function updateMealQuantity(newValue) {
   const qty = parseInt(newValue) || 1;
   setMealQuantity(qty);
-  refreshUI();
+  saveMealQuantity();
+
+  const lastDietResult = getLastDietResult();
+  if (lastDietResult) {
+    renderSuggestedDiet(lastDietResult);
+  } else {
+    refreshUI();
+  }
 }
 
 export function setGlobalTag(selectElement) {
@@ -200,6 +214,7 @@ export function updateFoodStatus(foodName, newStatus) {
     refreshUI();
   } else {
     const dietResult = getSuggestedDiets();
+    setLastDietResult(dietResult);
     renderSuggestedDiet(dietResult);
 
     // Also re-render table to update selects and order if sorted by priority
@@ -311,8 +326,15 @@ export async function initApp() {
     if(msg) updateSessionStatus(msg);
 
     loadStomachSize();
+    loadMealQuantity();
     loadGlobalTags();
     loadUIState();
+
+    // Update Input Fields from State
+    const stomachSizeInput = document.getElementById("stomach-size-input");
+    if (stomachSizeInput) stomachSizeInput.value = getStomachSize();
+
+    // mealQuantityInput is handled by renderDietControls inside refreshUI
 
     refreshUI();
     updateFoodContainerStatus("");

@@ -343,6 +343,11 @@ select {
     display: flex;
     gap: var(--spacing-03);
 }
+.form-group-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-03);
+}
 .form-group-container {
     display: flex;
     gap: var(--spacing-05);
@@ -391,6 +396,9 @@ select {
     }
 }
 .calorie-goal {
+    margin-bottom: var(--spacing-05);
+}
+.diet-controls {
     margin-bottom: var(--spacing-05);
 }
 .diet-options-container {
@@ -562,4 +570,42 @@ select {
 /* Utilities */
 .u-bold {
     font-weight: 600;
+}
+
+/* --- NEW DIET CARDS LAYOUT --- */
+.diet-cards-container {
+    display: flex;
+    gap: var(--spacing-05);
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: var(--spacing-05);
+}
+.diet-card {
+    flex: 1;
+    min-width: 250px;
+    background-color: var(--background-layer-2); /* White background */
+    padding: var(--spacing-05);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-normal);
+}
+.diet-card h5 {
+    margin-bottom: var(--spacing-04);
+    font-size: var(--fz-4);
+    font-weight: 600;
+    color: var(--color-normal);
+    border-bottom: 1px solid var(--border-normal);
+    padding-bottom: var(--spacing-03);
+}
+.diet-card ul {
+    list-style: none;
+    padding: 0;
+}
+.diet-card li {
+    margin-bottom: var(--spacing-03);
+    font-size: var(--fz-3);
+    color: var(--color-normal);
+    padding: var(--spacing-03);
+    background-color: var(--background-layer-2); /* White background for items */
+    border-radius: var(--radius);
+    border: 1px solid var(--border-soft);
 }
