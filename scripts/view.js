@@ -330,7 +330,7 @@ export function renderDietControls() {
                     onchange="window.updateMealQuantity(this.value)"
                 />
                 <button onclick="window.refreshUI()" class="button button-primary">
-                    <i class="ph ph-arrows-clockwise icon"></i> Refresh
+                    <i class="ph ph-arrows-clockwise icon"></i> New Diet Suggestion
                 </button>
             </div>
         </div>`;
