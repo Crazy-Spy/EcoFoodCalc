@@ -87,9 +87,9 @@ namespace Eco.Mods.TechTree
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                Log($"[EcoDietOptimizer] Error loading cache: {ex.Message}");
+                // Silently ignore cache loading errors to avoid server crashes
             }
         }
 
@@ -107,9 +107,9 @@ namespace Eco.Mods.TechTree
                 }
                 File.WriteAllLines(CacheFilePath, lines);
             }
-            catch (Exception ex)
+            catch
             {
-                Log($"[EcoDietOptimizer] Error saving cache: {ex.Message}"));
+                // Silently ignore cache saving errors
             }
         }
 
@@ -123,7 +123,6 @@ namespace Eco.Mods.TechTree
             catch (Exception ex)
             {
                 user.Player.MsgLocStr($"Error calculating diet: {ex.Message}");
-                Log(ex.ToString());
             }
         }
 
@@ -230,8 +229,9 @@ namespace Eco.Mods.TechTree
                 availableFoods.Add(food);
             }
 
-            if (discoveryApiFailed) Log("[EcoDietOptimizer] Warning: Discovery API failed. Assuming all foods discovered.");
-            if (tasteApiFailed) Log("[EcoDietOptimizer] Warning: Taste API failed. Assuming no bad foods.");
+            // Warn only once per request if APIs are failing (via chat message instead of log)
+            if (discoveryApiFailed) user.Player.MsgLocStr("Warning: Discovery API failed. Assuming all foods discovered.");
+            if (tasteApiFailed) user.Player.MsgLocStr("Warning: Taste API failed. Assuming no bad foods.");
 
             if (availableFoods.Count == 0) return null;
 
@@ -411,11 +411,6 @@ namespace Eco.Mods.TechTree
                 failed = true;
                 return false;
             }
-        }
-
-        private static void Log(string message)
-        {
-             Console.WriteLine(message);
         }
     }
 }
