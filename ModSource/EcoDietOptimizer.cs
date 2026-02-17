@@ -415,7 +415,8 @@ namespace Eco.Mods.TechTree
         private static bool IsHiddenOrBlacklisted(FoodItem food)
         {
             // Blacklist for Safe Mode (Preventing Spoilers)
-            var name = food.DisplayName.ToLower();
+            // Use .ToString() because DisplayName is LocString in newer versions
+            var name = food.DisplayName.ToString().ToLower();
             if (name.Contains("ecoylent") ||
                 name.Contains("admin") ||
                 name.Contains("dev tool") ||
