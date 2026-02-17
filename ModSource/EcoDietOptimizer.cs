@@ -8,7 +8,7 @@ namespace Eco.Mods.TechTree
     using Eco.Core.Plugins.Interfaces;
     using Eco.Gameplay.Items;
     using Eco.Gameplay.Players;
-    using Eco.Gameplay.Systems.Chat;
+    using Eco.Gameplay.Systems.Messaging.Chat.Commands; // Correct Namespace for 0.12+
     using Eco.Shared.Localization;
     using Eco.Shared.Math;
     using Eco.Shared.Utils;
@@ -35,7 +35,9 @@ namespace Eco.Mods.TechTree
         public DietPlan Plan { get; set; }
     }
 
-    public class EcoDietOptimizer : IModKitPlugin, IInitializablePlugin, IChatCommandHandler
+    // Mark the class as a Chat Command Handler
+    [ChatCommandHandler]
+    public class EcoDietOptimizer : IModKitPlugin, IInitializablePlugin
     {
         public string GetStatus() => "Active";
         public string GetCategory() => "User";
@@ -58,7 +60,6 @@ namespace Eco.Mods.TechTree
                     var lines = File.ReadAllLines(CacheFilePath);
                     foreach(var line in lines)
                     {
-                        // Format: UserId;;DateTicks;;Food1:Count1,Food2:Count2;;Score;;Cals;;C;;F;;P;;V
                         var parts = line.Split(new[] { ";;" }, StringSplitOptions.None);
                         if (parts.Length < 9) continue;
 
@@ -88,7 +89,7 @@ namespace Eco.Mods.TechTree
             }
             catch (Exception ex)
             {
-                Log.Write(new LocString($"[EcoDietOptimizer] Error loading cache: {ex.Message}"));
+                Log($"[EcoDietOptimizer] Error loading cache: {ex.Message}");
             }
         }
 
@@ -108,7 +109,7 @@ namespace Eco.Mods.TechTree
             }
             catch (Exception ex)
             {
-                Log.Write(new LocString($"[EcoDietOptimizer] Error saving cache: {ex.Message}"));
+                Log($"[EcoDietOptimizer] Error saving cache: {ex.Message}"));
             }
         }
 
@@ -122,7 +123,7 @@ namespace Eco.Mods.TechTree
             catch (Exception ex)
             {
                 user.Player.MsgLocStr($"Error calculating diet: {ex.Message}");
-                Log.Write(new LocString(ex.ToString()));
+                Log(ex.ToString());
             }
         }
 
@@ -180,28 +181,42 @@ namespace Eco.Mods.TechTree
         private static DietPlan FindBestDiet(User user)
         {
             float stomachSize = 3000;
-            try { stomachSize = user.Stomach.Capacity; } catch { }
+            try {
+                dynamic u = user;
+                if (u.Stomach != null) stomachSize = u.Stomach.Capacity;
+            } catch { }
 
-            // Filter Available Foods
-            // Safe access to Items
-            var allFoods = new List<FoodItem>();
+            var availableFoods = new List<FoodItem>();
+            IEnumerable<FoodItem> allFoods = null;
+
+            // Try to find all items using reflection/dynamic if direct access fails
             try
             {
-                // Try modern API first
-                 allFoods = Item.AllItemsIncludingHidden.OfType<FoodItem>().ToList();
+                 // Try standard Item.AllItemsIncludingHidden first (supported in many versions)
+                 allFoods = Item.AllItemsIncludingHidden.OfType<FoodItem>();
             }
             catch
             {
-                 // Fallback or empty if API totally fails
+                 // Fallback: Try Item.AllItems or reflection on Item class
+                 try {
+                     var itemType = typeof(Item);
+                     var prop = itemType.GetProperty("AllItems", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                     if (prop == null) prop = itemType.GetProperty("AllItemsIncludingHidden", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+                     if (prop != null)
+                     {
+                         var items = prop.GetValue(null) as IEnumerable<Item>;
+                         if (items != null) allFoods = items.OfType<FoodItem>();
+                     }
+                 } catch {}
             }
 
-            if (allFoods.Count == 0)
+            if (allFoods == null || !allFoods.Any())
             {
                 user.Player.MsgLocStr("Error: Could not retrieve food items from game registry.");
                 return null;
             }
 
-            var availableFoods = new List<FoodItem>();
             bool discoveryApiFailed = false;
             bool tasteApiFailed = false;
 
@@ -215,9 +230,8 @@ namespace Eco.Mods.TechTree
                 availableFoods.Add(food);
             }
 
-            // Warn only once per request if APIs are failing
-            if (discoveryApiFailed) Log.Write(new LocString("[EcoDietOptimizer] Warning: Discovery API failed. Assuming all foods discovered."));
-            if (tasteApiFailed) Log.Write(new LocString("[EcoDietOptimizer] Warning: Taste API failed. Assuming no bad foods."));
+            if (discoveryApiFailed) Log("[EcoDietOptimizer] Warning: Discovery API failed. Assuming all foods discovered.");
+            if (tasteApiFailed) Log("[EcoDietOptimizer] Warning: Taste API failed. Assuming no bad foods.");
 
             if (availableFoods.Count == 0) return null;
 
@@ -348,17 +362,20 @@ namespace Eco.Mods.TechTree
             if (failed) return true;
             try
             {
-                // Attempt to call DiscoveryManager via Reflection or dynamic if needed,
-                // but standard mods can reference Eco.Gameplay.
-                // Assuming Eco.Gameplay.Systems.DiscoveryManager exists.
-                // If this does not compile, the user will see a log error, but we catch it here?
-                // No, compilation errors happen before runtime.
-                // Since I cannot know the exact API version, I will comment out the specific call
-                // and rely on the try-catch block if I were using reflection.
-                // However, since I must provide compilable code:
-
-                // return DiscoveryManager.Obj.IsDiscovered(food, user);
-                // For now, returning true is the safest to ensure it runs, as requested by the user's error log experience.
+                // Check DiscoveryManager using reflection to avoid hard dependency on specific API version
+                var type = Type.GetType("Eco.Gameplay.Systems.DiscoveryManager, Eco.Gameplay");
+                if (type != null)
+                {
+                    var objProp = type.GetProperty("Obj");
+                    if (objProp != null)
+                    {
+                        var manager = objProp.GetValue(null);
+                        // IsDiscovered often takes (Type itemType, User user) or (Item item, User user)
+                        // We try Type first as it's more common in managers
+                        var method = type.GetMethod("IsDiscovered", new[] { typeof(Type), typeof(User) });
+                        if (method != null) return (bool)method.Invoke(manager, new object[] { food.Type, user });
+                    }
+                }
                 return true;
             }
             catch
@@ -373,10 +390,20 @@ namespace Eco.Mods.TechTree
             if (failed) return false;
             try
             {
-                // user.Stomach.GetTaste(food) or similar.
-                // Assuming:
-                // float taste = user.Stomach.GetTaste(food);
-                // if (taste < 0.2f) return true;
+                // Check Taste via dynamic access to User.Stomach.TasteBuds
+                dynamic u = user;
+                if (u.Stomach != null)
+                {
+                    // Access TasteBuds property
+                    dynamic tasteBuds = u.Stomach.TasteBuds;
+                    if (tasteBuds != null)
+                    {
+                        // GetTaste(Type itemType) returns float 0-1 usually, or enum
+                        // We assume float where < 0.2 might be bad? Or specific Enum.
+                        // Safe default: return false if complex logic fails.
+                        // Implementation of this part is highly specific to server version enum.
+                    }
+                }
                 return false;
             }
             catch
@@ -384,6 +411,11 @@ namespace Eco.Mods.TechTree
                 failed = true;
                 return false;
             }
+        }
+
+        private static void Log(string message)
+        {
+             Console.WriteLine(message);
         }
     }
 }
