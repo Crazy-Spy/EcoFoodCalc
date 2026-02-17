@@ -181,8 +181,17 @@ namespace Eco.Mods.TechTree
         {
             float stomachSize = 3000;
             try {
-                dynamic u = user;
-                if (u.Stomach != null) stomachSize = u.Stomach.Capacity;
+                // Use reflection instead of dynamic to avoid missing compiler dependencies
+                var stomachProp = user.GetType().GetProperty("Stomach");
+                if (stomachProp != null)
+                {
+                    var stomach = stomachProp.GetValue(user);
+                    if (stomach != null)
+                    {
+                        var capProp = stomach.GetType().GetProperty("Capacity");
+                        if (capProp != null) stomachSize = (float)capProp.GetValue(stomach);
+                    }
+                }
             } catch { }
 
             var availableFoods = new List<FoodItem>();
@@ -390,18 +399,30 @@ namespace Eco.Mods.TechTree
             if (failed) return false;
             try
             {
-                // Check Taste via dynamic access to User.Stomach.TasteBuds
-                dynamic u = user;
-                if (u.Stomach != null)
+                // Check Taste via reflection
+                var stomachProp = user.GetType().GetProperty("Stomach");
+                if (stomachProp != null)
                 {
-                    // Access TasteBuds property
-                    dynamic tasteBuds = u.Stomach.TasteBuds;
-                    if (tasteBuds != null)
+                    var stomach = stomachProp.GetValue(user);
+                    if (stomach != null)
                     {
-                        // GetTaste(Type itemType) returns float 0-1 usually, or enum
-                        // We assume float where < 0.2 might be bad? Or specific Enum.
-                        // Safe default: return false if complex logic fails.
-                        // Implementation of this part is highly specific to server version enum.
+                        var tasteBudsProp = stomach.GetType().GetProperty("TasteBuds");
+                        if (tasteBudsProp != null)
+                        {
+                            var tasteBuds = tasteBudsProp.GetValue(stomach);
+                            if (tasteBuds != null)
+                            {
+                                // GetTaste(Type itemType) usually returns float 0-1 or Enum
+                                var getTasteMethod = tasteBuds.GetType().GetMethod("GetTaste", new[] { typeof(Type) });
+                                if (getTasteMethod != null)
+                                {
+                                    var result = getTasteMethod.Invoke(tasteBuds, new object[] { food.Type });
+                                    // If result is float < 0.5 (bad), return true. If Enum, we can't easily check without Enum type.
+                                    // Assume float for now:
+                                    if (result is float f && f < 0.5f) return true;
+                                }
+                            }
+                        }
                     }
                 }
                 return false;
