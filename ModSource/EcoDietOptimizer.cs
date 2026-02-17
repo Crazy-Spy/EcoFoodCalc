@@ -40,6 +40,7 @@ namespace Eco.Mods.TechTree
 
         private static string CacheFilePath = "EcoDietOptimizer_Cache.txt";
         private static Dictionary<string, DietResult> DietCache = new Dictionary<string, DietResult>();
+        private static readonly object _lock = new object();
         private static Random rng = new Random();
         private static int CooldownMinutes = 1440;
         private static bool DebugMode = false;
@@ -52,58 +53,64 @@ namespace Eco.Mods.TechTree
 
         private static void LoadData()
         {
-            try
+            lock(_lock)
             {
-                if (File.Exists(CacheFilePath))
+                try
                 {
-                    var lines = File.ReadAllLines(CacheFilePath);
-                    foreach(var line in lines)
+                    if (File.Exists(CacheFilePath))
                     {
-                        var parts = line.Split(new[] { ";;" }, StringSplitOptions.None);
-                        if (parts.Length < 9) continue;
-
-                        string userId = parts[0];
-                        long ticks = long.Parse(parts[1]);
-                        var foods = new Dictionary<string, int>();
-                        foreach(var f in parts[2].Split(','))
+                        var lines = File.ReadAllLines(CacheFilePath);
+                        foreach(var line in lines)
                         {
-                            var fp = f.Split(':');
-                            if (fp.Length == 2) foods[fp[0]] = int.Parse(fp[1]);
+                            var parts = line.Split(new[] { ";;" }, StringSplitOptions.None);
+                            if (parts.Length < 9) continue;
+
+                            string userId = parts[0];
+                            long ticks = long.Parse(parts[1]);
+                            var foods = new Dictionary<string, int>();
+                            foreach(var f in parts[2].Split(','))
+                            {
+                                var fp = f.Split(':');
+                                if (fp.Length == 2) foods[fp[0]] = int.Parse(fp[1]);
+                            }
+
+                            var plan = new DietPlan
+                            {
+                                Foods = foods,
+                                Score = double.Parse(parts[3]),
+                                TotalCalories = float.Parse(parts[4]),
+                                Carbs = float.Parse(parts[5]),
+                                Fat = float.Parse(parts[6]),
+                                Protein = float.Parse(parts[7]),
+                                Vitamins = float.Parse(parts[8])
+                            };
+
+                            DietCache[userId] = new DietResult { GeneratedAt = new DateTime(ticks), Plan = plan };
                         }
-
-                        var plan = new DietPlan
-                        {
-                            Foods = foods,
-                            Score = double.Parse(parts[3]),
-                            TotalCalories = float.Parse(parts[4]),
-                            Carbs = float.Parse(parts[5]),
-                            Fat = float.Parse(parts[6]),
-                            Protein = float.Parse(parts[7]),
-                            Vitamins = float.Parse(parts[8])
-                        };
-
-                        DietCache[userId] = new DietResult { GeneratedAt = new DateTime(ticks), Plan = plan };
                     }
                 }
+                catch { }
             }
-            catch { }
         }
 
         private static void SaveData()
         {
-            try
+            lock(_lock)
             {
-                var lines = new List<string>();
-                foreach(var kvp in DietCache)
+                try
                 {
-                    var r = kvp.Value;
-                    var p = r.Plan;
-                    string foodStr = string.Join(",", p.Foods.Select(f => $"{f.Key}:{f.Value}"));
-                    lines.Add($"{kvp.Key};;{r.GeneratedAt.Ticks};;{foodStr};;{p.Score};;{p.TotalCalories};;{p.Carbs};;{p.Fat};;{p.Protein};;{p.Vitamins}");
+                    var lines = new List<string>();
+                    foreach(var kvp in DietCache)
+                    {
+                        var r = kvp.Value;
+                        var p = r.Plan;
+                        string foodStr = string.Join(",", p.Foods.Select(f => $"{f.Key}:{f.Value}"));
+                        lines.Add($"{kvp.Key};;{r.GeneratedAt.Ticks};;{foodStr};;{p.Score};;{p.TotalCalories};;{p.Carbs};;{p.Fat};;{p.Protein};;{p.Vitamins}");
+                    }
+                    File.WriteAllLines(CacheFilePath, lines);
                 }
-                File.WriteAllLines(CacheFilePath, lines);
+                catch { }
             }
-            catch { }
         }
 
         [ChatCommand("Suggests an optimal diet based on your stomach size and tastes.", "diet")]
@@ -126,15 +133,18 @@ namespace Eco.Mods.TechTree
                 switch (arg.ToLower())
                 {
                     case "clear":
-                        if (DietCache.ContainsKey(user.Name))
+                        lock(_lock)
                         {
-                            DietCache.Remove(user.Name);
-                            SaveData();
-                            user.Player.MsgLocStr("Diet cache cleared.");
-                        }
-                        else
-                        {
-                            user.Player.MsgLocStr("No cached diet found.");
+                            if (DietCache.ContainsKey(user.Name))
+                            {
+                                DietCache.Remove(user.Name);
+                                SaveData(); // SaveData locks internally, but we hold lock. Re-entrant lock is okay.
+                                user.Player.MsgLocStr("Diet cache cleared.");
+                            }
+                            else
+                            {
+                                user.Player.MsgLocStr("No cached diet found.");
+                            }
                         }
                         break;
                     case "debug":
@@ -182,10 +192,18 @@ namespace Eco.Mods.TechTree
             if (user == null || user.Player == null) return;
 
             string userId = user.Name;
+            DietResult cached = null;
 
-            if (DietCache.ContainsKey(userId))
+            lock(_lock)
             {
-                var cached = DietCache[userId];
+                if (DietCache.ContainsKey(userId))
+                {
+                    cached = DietCache[userId];
+                }
+            }
+
+            if (cached != null)
+            {
                 if ((DateTime.Now - cached.GeneratedAt).TotalMinutes < CooldownMinutes)
                 {
                      if (meals > 0)
@@ -199,7 +217,7 @@ namespace Eco.Mods.TechTree
                 }
             }
 
-            if (meals > 0 && !DietCache.ContainsKey(userId))
+            if (meals > 0 && cached == null)
             {
                  user.Player.MsgLocStr("No cached diet found. Calculating new one...");
             }
@@ -212,8 +230,11 @@ namespace Eco.Mods.TechTree
 
             if (newPlan != null)
             {
-                DietCache[userId] = new DietResult { GeneratedAt = DateTime.Now, Plan = newPlan };
-                SaveData();
+                lock(_lock)
+                {
+                    DietCache[userId] = new DietResult { GeneratedAt = DateTime.Now, Plan = newPlan };
+                    SaveData(); // Re-entrant lock OK
+                }
 
                 if (meals > 0)
                     DisplayShoppingList(user, newPlan, meals);
@@ -357,8 +378,9 @@ namespace Eco.Mods.TechTree
                 v += item.Nutrition.Vitamins;
                 cals += item.Calories;
 
-                if (!counts.ContainsKey(item.DisplayName)) counts[item.DisplayName] = 0;
-                counts[item.DisplayName]++;
+                string name = item.DisplayName.ToString();
+                if (!counts.ContainsKey(name)) counts[name] = 0;
+                counts[name]++;
             }
 
             float totalNutrients = c + f + p + v;
@@ -404,11 +426,11 @@ namespace Eco.Mods.TechTree
                 float pp = (plan.Protein / total) * 100;
                 float fp = (plan.Fat / total) * 100;
                 float vp = (plan.Vitamins / total) * 100;
-                sb.AppendLine($"Expected balance: Carbs: {cp:F0} %, Protein: {pp:F0} %, Fat: {fp:F0} % , Vitamins: {vp:F0}%");
+                sb.AppendLine($"Expected balance: Carbs: {cp:F0} %, Protein: {pp:F0} %, Fat: {fp:F0} %, Vitamins: {vp:F0} %");
             }
             else
             {
-                sb.AppendLine("Expected balance: Carbs: 0 %, Protein: 0 %, Fat: 0 % , Vitamins: 0%");
+                sb.AppendLine("Expected balance: Carbs: 0 %, Protein: 0 %, Fat: 0 %, Vitamins: 0 %");
             }
 
             user.Player.MsgLocStr(sb.ToString());
@@ -428,7 +450,6 @@ namespace Eco.Mods.TechTree
         private static bool IsHiddenOrBlacklisted(FoodItem food)
         {
             // Blacklist for Safe Mode (Preventing Spoilers)
-            // Use .ToString() because DisplayName is LocString in newer versions
             var name = food.DisplayName.ToString().ToLower();
             if (name.Contains("ecoylent") ||
                 name.Contains("admin") ||
@@ -605,7 +626,7 @@ namespace Eco.Mods.TechTree
                                            : new object[] { user, food.Type };
 
                                 var result = (bool)method.Invoke(manager, args);
-                                if (DebugMode && !result) user.Player.MsgLocStr($"Debug: {food.DisplayName} is NOT discovered.");
+                                if (DebugMode && !result) user.Player.MsgLocStr($"Debug: {food.DisplayName.ToString()} is NOT discovered.");
                                 return result;
                             }
                         }
