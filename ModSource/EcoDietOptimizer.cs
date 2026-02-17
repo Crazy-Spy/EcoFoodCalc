@@ -9,19 +9,15 @@ namespace Eco.Mods.TechTree
     using Eco.Core.Plugins.Interfaces;
     using Eco.Gameplay.Items;
     using Eco.Gameplay.Players;
-    using Eco.Gameplay.Systems.Messaging.Chat.Commands; // Correct Namespace for 0.12+
+    using Eco.Gameplay.Systems.Messaging.Chat.Commands;
     using Eco.Shared.Localization;
     using Eco.Shared.Math;
     using Eco.Shared.Utils;
     using Eco.Core.Utils;
 
-    // Data structures for Diet Optimization
     public class DietPlan
     {
-        // Key: Food Name, Value: Count
         public Dictionary<string, int> Foods { get; set; } = new Dictionary<string, int>();
-
-        // Stats
         public double Score { get; set; }
         public float TotalCalories { get; set; }
         public float Carbs { get; set; }
@@ -36,7 +32,6 @@ namespace Eco.Mods.TechTree
         public DietPlan Plan { get; set; }
     }
 
-    // Mark the class as a Chat Command Handler
     [ChatCommandHandler]
     public class EcoDietOptimizer : IModKitPlugin, IInitializablePlugin
     {
@@ -46,7 +41,7 @@ namespace Eco.Mods.TechTree
         private static string CacheFilePath = "EcoDietOptimizer_Cache.txt";
         private static Dictionary<string, DietResult> DietCache = new Dictionary<string, DietResult>();
         private static Random rng = new Random();
-        private static int CooldownMinutes = 1440; // Default 24 hours
+        private static int CooldownMinutes = 1440;
         private static bool DebugMode = false;
 
         public void Initialize(TimedTask timer)
@@ -90,10 +85,7 @@ namespace Eco.Mods.TechTree
                     }
                 }
             }
-            catch
-            {
-                // Silently ignore cache loading errors to avoid server crashes
-            }
+            catch { }
         }
 
         private static void SaveData()
@@ -110,10 +102,7 @@ namespace Eco.Mods.TechTree
                 }
                 File.WriteAllLines(CacheFilePath, lines);
             }
-            catch
-            {
-                // Silently ignore cache saving errors
-            }
+            catch { }
         }
 
         [ChatCommand("Suggests an optimal diet based on your stomach size and tastes.", "diet")]
@@ -187,7 +176,6 @@ namespace Eco.Mods.TechTree
 
             string userId = user.Name;
 
-            // Check Cache
             if (DietCache.ContainsKey(userId))
             {
                 var cached = DietCache[userId];
@@ -235,7 +223,6 @@ namespace Eco.Mods.TechTree
         {
             float stomachSize = 3000;
             try {
-                // Use reflection instead of dynamic to avoid missing compiler dependencies
                 var stomachProp = user.GetType().GetProperty("Stomach");
                 if (stomachProp != null)
                 {
@@ -251,19 +238,16 @@ namespace Eco.Mods.TechTree
             var availableFoods = new List<FoodItem>();
             IEnumerable<FoodItem> allFoods = null;
 
-            // Try to find all items using reflection/dynamic if direct access fails
             try
             {
-                 // Try standard Item.AllItemsIncludingHidden first (supported in many versions)
                  allFoods = Item.AllItemsIncludingHidden.OfType<FoodItem>();
             }
             catch
             {
-                 // Fallback: Try Item.AllItems or reflection on Item class
                  try {
                      var itemType = typeof(Item);
-                     var prop = itemType.GetProperty("AllItems", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                     if (prop == null) prop = itemType.GetProperty("AllItemsIncludingHidden", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                     var prop = itemType.GetProperty("AllItems", BindingFlags.Public | BindingFlags.Static);
+                     if (prop == null) prop = itemType.GetProperty("AllItemsIncludingHidden", BindingFlags.Public | BindingFlags.Static);
 
                      if (prop != null)
                      {
@@ -284,7 +268,6 @@ namespace Eco.Mods.TechTree
 
             foreach(var food in allFoods)
             {
-                // Filter out developer items or hidden items if property exists
                 if (IsHidden(food)) continue;
 
                 if (!IsDiscovered(user, food, ref discoveryApiFailed)) continue;
@@ -295,7 +278,6 @@ namespace Eco.Mods.TechTree
                 availableFoods.Add(food);
             }
 
-            // Warn only once per request if APIs are failing (via chat message instead of log)
             if (discoveryApiFailed) user.Player.MsgLocStr("Warning: Discovery API failed. Assuming all foods discovered.");
             if (tasteApiFailed) user.Player.MsgLocStr("Warning: Taste API failed. Assuming no bad foods.");
 
@@ -320,7 +302,6 @@ namespace Eco.Mods.TechTree
                    pool.RemoveAt(idx);
                 }
 
-                // Fill stomach
                 float currentCals = 0;
                 var dietList = new List<FoodItem>();
                 var drawPool = new List<FoodItem>(selectedTypes);
@@ -426,12 +407,8 @@ namespace Eco.Mods.TechTree
         {
             try
             {
-                // Check 'Hidden' property
                 var prop = food.GetType().GetProperty("Hidden");
                 if (prop != null && (bool)prop.GetValue(food)) return true;
-
-                // Check 'Tag' if necessary (e.g. "Dev", "Hidden")
-                // ...
             }
             catch {}
             return false;
@@ -440,15 +417,17 @@ namespace Eco.Mods.TechTree
         private static void ProbeReflection(User user)
         {
              var sb = new StringBuilder();
-             sb.AppendLine("Reflection Probe:");
+             sb.AppendLine("Reflection Probe V2:");
 
              try {
-                 // User Props
                  sb.AppendLine("User Properties:");
                  foreach(var p in user.GetType().GetProperties()) sb.Append(p.Name + ", ");
                  sb.AppendLine();
 
-                 // Stomach Props
+                 sb.AppendLine("User Fields:");
+                 foreach(var f in user.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)) sb.Append(f.Name + ", ");
+                 sb.AppendLine();
+
                  var stomach = user.GetType().GetProperty("Stomach")?.GetValue(user);
                  if (stomach != null)
                  {
@@ -456,45 +435,90 @@ namespace Eco.Mods.TechTree
                      foreach(var p in stomach.GetType().GetProperties()) sb.Append(p.Name + ", ");
                      sb.AppendLine();
 
-                     // TasteBuds Props
-                     var tb = stomach.GetType().GetProperty("TasteBuds")?.GetValue(stomach);
-                     if (tb != null)
-                     {
-                          sb.AppendLine("TasteBuds Properties:");
-                          foreach(var p in tb.GetType().GetProperties()) sb.Append(p.Name + ", ");
-                          sb.AppendLine();
-                     }
+                     sb.AppendLine("Stomach Fields:");
+                     foreach(var f in stomach.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)) sb.Append(f.Name + ", ");
+                     sb.AppendLine();
                  }
-                 else sb.AppendLine("Stomach is null.");
+
+                 // Check DiscoveryManager candidates
+                 var candidates = new[] {
+                    "Eco.Gameplay.Systems.DiscoveryManager, Eco.Gameplay",
+                    "Eco.Gameplay.Components.DiscoveryManager, Eco.Gameplay",
+                    "Eco.Gameplay.DynamicLayers.DiscoveryManager, Eco.Gameplay",
+                    "Eco.Gameplay.Systems.Discovery.DiscoveryManager, Eco.Gameplay"
+                 };
+                 foreach(var c in candidates)
+                 {
+                     var t = Type.GetType(c);
+                     if (t != null) sb.AppendLine($"Found Manager: {c}");
+                 }
+
              } catch (Exception ex) { sb.AppendLine($"Probe Error: {ex.Message}"); }
 
              user.Player.MsgLocStr(sb.ToString());
         }
 
-        // Helpers for Eco API interaction
         private static bool IsDiscovered(User user, FoodItem food, ref bool failed)
         {
-            // 1. Check Stomach Contents (Recent History) - Strongest positive signal
+            // 1. Check Inventory (Possession)
+            try
+            {
+                var invProp = user.GetType().GetProperty("Inventory");
+                if (invProp != null)
+                {
+                    var inv = invProp.GetValue(user);
+                    if (inv != null)
+                    {
+                        var allItemsProp = inv.GetType().GetProperty("AllItems") ?? inv.GetType().GetProperty("Stacks");
+                        if (allItemsProp != null)
+                        {
+                            var items = allItemsProp.GetValue(inv) as System.Collections.IEnumerable;
+                            if (items != null)
+                            {
+                                foreach(var item in items)
+                                {
+                                    // Handle ItemStack vs Item
+                                    var itemProp = item.GetType().GetProperty("Item");
+                                    var obj = itemProp != null ? itemProp.GetValue(item) : item;
+
+                                    if (obj != null)
+                                    {
+                                        var typeProp = obj.GetType().GetProperty("Type");
+                                        if (typeProp != null && (Type)typeProp.GetValue(obj) == food.Type) return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch {}
+
+            // 2. Check Stomach Contents (Recent History) - Check Properties AND Fields
             try
             {
                  var stomach = user.GetType().GetProperty("Stomach")?.GetValue(user);
                  if (stomach != null)
                  {
-                     // Check Contents (current digestion)
+                     System.Collections.IEnumerable contents = null;
+
                      var contentsProp = stomach.GetType().GetProperty("Contents");
-                     if (contentsProp != null)
+                     if (contentsProp != null) contents = contentsProp.GetValue(stomach) as System.Collections.IEnumerable;
+
+                     if (contents == null)
                      {
-                         var contents = contentsProp.GetValue(stomach) as System.Collections.IEnumerable;
-                         if (contents != null)
+                         var contentsField = stomach.GetType().GetField("Contents", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                         if (contentsField != null) contents = contentsField.GetValue(stomach) as System.Collections.IEnumerable;
+                     }
+
+                     if (contents != null)
+                     {
+                         foreach (var entry in contents)
                          {
-                             foreach (var entry in contents)
+                             var typeProp = entry.GetType().GetProperty("FoodType") ?? entry.GetType().GetProperty("Type");
+                             if (typeProp != null)
                              {
-                                 var typeProp = entry.GetType().GetProperty("FoodType") ?? entry.GetType().GetProperty("Type");
-                                 if (typeProp != null)
-                                 {
-                                     var type = typeProp.GetValue(entry) as Type;
-                                     if (type == food.Type) return true;
-                                 }
+                                 var type = typeProp.GetValue(entry) as Type;
+                                 if (type == food.Type) return true;
                              }
                          }
                      }
@@ -502,11 +526,10 @@ namespace Eco.Mods.TechTree
             }
             catch { }
 
-            if (failed) return false; // Fail safe to NOT discovered
+            if (failed) return false;
 
             try
             {
-                // Check DiscoveryManager using reflection
                 var managerTypeNames = new[] {
                     "Eco.Gameplay.Systems.DiscoveryManager, Eco.Gameplay",
                     "Eco.Gameplay.Components.DiscoveryManager, Eco.Gameplay",
@@ -519,14 +542,12 @@ namespace Eco.Mods.TechTree
                     var type = Type.GetType(typeName);
                     if (type != null)
                     {
-                        var objProp = type.GetProperty("Obj"); // Singleton usually Obj or Instance
+                        var objProp = type.GetProperty("Obj");
                         if (objProp == null) objProp = type.GetProperty("Instance");
 
                         if (objProp != null)
                         {
                             var manager = objProp.GetValue(null);
-
-                            // Try IsDiscovered(Type, User) or IsDiscovered(User, Type)
                             var method = type.GetMethod("IsDiscovered", new[] { typeof(Type), typeof(User) });
                             if (method == null) method = type.GetMethod("IsDiscovered", new[] { typeof(User), typeof(Type) });
 
@@ -544,8 +565,10 @@ namespace Eco.Mods.TechTree
                     }
                 }
 
-                if (DebugMode) user.Player.MsgLocStr("Debug: DiscoveryManager not found. Defaulting to NOT discovered (Safe Mode).");
-                return false; // Default to FALSE to avoid spoilers
+                // If we reach here, we couldn't access DiscoveryManager.
+                // Default to False (Safe Mode) to avoid spoilers.
+                if (DebugMode) user.Player.MsgLocStr("Debug: DiscoveryManager not found. Defaulting to FALSE.");
+                return false;
             }
             catch (Exception ex)
             {
@@ -560,7 +583,6 @@ namespace Eco.Mods.TechTree
             if (failed) return false;
             try
             {
-                // Check Taste via reflection
                 var stomachProp = user.GetType().GetProperty("Stomach");
                 if (stomachProp != null)
                 {
@@ -573,13 +595,10 @@ namespace Eco.Mods.TechTree
                             var tasteBuds = tasteBudsProp.GetValue(stomach);
                             if (tasteBuds != null)
                             {
-                                // GetTaste(Type itemType) usually returns float 0-1 or Enum
                                 var getTasteMethod = tasteBuds.GetType().GetMethod("GetTaste", new[] { typeof(Type) });
                                 if (getTasteMethod != null)
                                 {
                                     var result = getTasteMethod.Invoke(tasteBuds, new object[] { food.Type });
-                                    // If result is float < 0.5 (bad), return true. If Enum, we can't easily check without Enum type.
-                                    // Assume float for now:
                                     if (result is float f && f < 0.5f) return true;
                                 }
                             }
