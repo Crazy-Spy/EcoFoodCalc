@@ -43,6 +43,7 @@ namespace Eco.Mods.TechTree
         private static Random rng = new Random();
         private static int CooldownMinutes = 1440;
         private static bool DebugMode = false;
+        private static bool StrictMode = false; // Default to False (Assume Discovered if API fails)
 
         public void Initialize(TimedTask timer)
         {
@@ -140,6 +141,12 @@ namespace Eco.Mods.TechTree
                         DebugMode = !DebugMode;
                         user.Player.MsgLocStr($"Debug mode is now {(DebugMode ? "ON" : "OFF")}.");
                         break;
+                    case "strict":
+                        StrictMode = !StrictMode;
+                        user.Player.MsgLocStr($"Strict Discovery Mode is now {(StrictMode ? "ON" : "OFF")}.");
+                        if (StrictMode) user.Player.MsgLocStr("Only explicitly discovered items will be shown.");
+                        else user.Player.MsgLocStr("All non-developer food items will be shown (Fallback enabled).");
+                        break;
                     case "probe":
                         ProbeReflection(user);
                         break;
@@ -159,7 +166,7 @@ namespace Eco.Mods.TechTree
                         }
                         else
                         {
-                            user.Player.MsgLocStr("Usage: /diet [meals | clear | debug | config <minutes>]");
+                            user.Player.MsgLocStr("Usage: /diet [meals | clear | debug | strict | config <minutes>]");
                         }
                         break;
                 }
@@ -268,7 +275,7 @@ namespace Eco.Mods.TechTree
 
             foreach(var food in allFoods)
             {
-                if (IsHidden(food)) continue;
+                if (IsHiddenOrBlacklisted(food)) continue;
 
                 if (!IsDiscovered(user, food, ref discoveryApiFailed)) continue;
                 if (IsBadOrHorrible(user, food, ref tasteApiFailed)) continue;
@@ -278,7 +285,9 @@ namespace Eco.Mods.TechTree
                 availableFoods.Add(food);
             }
 
-            if (discoveryApiFailed) user.Player.MsgLocStr("Warning: Discovery API failed. Assuming all foods discovered.");
+            if (discoveryApiFailed && !StrictMode)
+                user.Player.MsgLocStr("Warning: Discovery API unreachable. Showing all foods (excluding dev items). Use '/diet strict' to enforce strict discovery.");
+
             if (tasteApiFailed) user.Player.MsgLocStr("Warning: Taste API failed. Assuming no bad foods.");
 
             if (availableFoods.Count == 0) return null;
@@ -403,12 +412,36 @@ namespace Eco.Mods.TechTree
              user.Player.MsgLocStr(sb.ToString());
         }
 
-        private static bool IsHidden(FoodItem food)
+        private static bool IsHiddenOrBlacklisted(FoodItem food)
         {
+            // Blacklist for Safe Mode (Preventing Spoilers)
+            var name = food.DisplayName.ToLower();
+            if (name.Contains("ecoylent") ||
+                name.Contains("admin") ||
+                name.Contains("dev tool") ||
+                name.Contains("creative") ||
+                name.Contains("spawn")) return true;
+
             try
             {
                 var prop = food.GetType().GetProperty("Hidden");
                 if (prop != null && (bool)prop.GetValue(food)) return true;
+
+                // Check Tags
+                var tagsProp = food.GetType().GetProperty("Tags");
+                if (tagsProp != null)
+                {
+                    var tags = tagsProp.GetValue(food) as IEnumerable<string>;
+                    if (tags != null)
+                    {
+                        foreach(var t in tags)
+                        {
+                            if (t.Equals("Dev", StringComparison.OrdinalIgnoreCase) ||
+                                t.Equals("Hidden", StringComparison.OrdinalIgnoreCase) ||
+                                t.Equals("Admin", StringComparison.OrdinalIgnoreCase)) return true;
+                        }
+                    }
+                }
             }
             catch {}
             return false;
@@ -526,7 +559,7 @@ namespace Eco.Mods.TechTree
             }
             catch { }
 
-            if (failed) return false;
+            if (failed && !StrictMode) return true; // Fail safe: Assume discovered if API broken (unless StrictMode)
 
             try
             {
@@ -566,21 +599,29 @@ namespace Eco.Mods.TechTree
                 }
 
                 // If we reach here, we couldn't access DiscoveryManager.
-                // Default to False (Safe Mode) to avoid spoilers.
-                if (DebugMode) user.Player.MsgLocStr("Debug: DiscoveryManager not found. Defaulting to FALSE.");
-                return false;
+                failed = true;
+                if (StrictMode)
+                {
+                    if (DebugMode) user.Player.MsgLocStr("Debug: DiscoveryManager not found. StrictMode=ON -> Defaulting to FALSE.");
+                    return false;
+                }
+                else
+                {
+                    if (DebugMode) user.Player.MsgLocStr("Debug: DiscoveryManager not found. StrictMode=OFF -> Defaulting to TRUE.");
+                    return true;
+                }
             }
             catch (Exception ex)
             {
                 if (DebugMode) user.Player.MsgLocStr($"Debug: Discovery check error: {ex.Message}");
                 failed = true;
-                return false;
+                return !StrictMode; // Default true if not strict
             }
         }
 
         private static bool IsBadOrHorrible(User user, FoodItem food, ref bool failed)
         {
-            if (failed) return false;
+            if (failed) return false; // If API failed, assume food is OK (don't filter it out)
             try
             {
                 var stomachProp = user.GetType().GetProperty("Stomach");
