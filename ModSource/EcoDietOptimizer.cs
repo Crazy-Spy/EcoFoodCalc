@@ -396,7 +396,20 @@ namespace Eco.Mods.TechTree
             {
                 sb.AppendLine($"- {kvp.Key}: {kvp.Value}");
             }
-            sb.AppendLine($"<i>Nutrients: C:{plan.Carbs:F1} F:{plan.Fat:F1} P:{plan.Protein:F1} V:{plan.Vitamins:F1}</i>");
+
+            float total = plan.Carbs + plan.Fat + plan.Protein + plan.Vitamins;
+            if (total > 0)
+            {
+                float cp = (plan.Carbs / total) * 100;
+                float pp = (plan.Protein / total) * 100;
+                float fp = (plan.Fat / total) * 100;
+                float vp = (plan.Vitamins / total) * 100;
+                sb.AppendLine($"Expected balance: Carbs: {cp:F0} %, Protein: {pp:F0} %, Fat: {fp:F0} % , Vitamins: {vp:F0}%");
+            }
+            else
+            {
+                sb.AppendLine("Expected balance: Carbs: 0 %, Protein: 0 %, Fat: 0 % , Vitamins: 0%");
+            }
 
             user.Player.MsgLocStr(sb.ToString());
         }
