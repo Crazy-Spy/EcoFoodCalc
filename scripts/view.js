@@ -154,14 +154,14 @@ function renderDietOption(dietAnalysis, optionNumber) {
                  <div class="diet-cards-container">
                     <!-- EAT CARD -->
                     <div class="diet-card eat-card">
-                        <h5>EAT (Per Meal)</h5>
+                        <h5>Eat<br>(Per Meal)</h5>
                         <ul>
                             ${eatListHtml}
                         </ul>
                     </div>
                     <!-- SHOPPING CARD -->
                     <div class="diet-card shop-card">
-                        <h5>SHOPPING LIST (For ${mealQuantity} Meals)</h5>
+                        <h5>Shopping List<br>(For ${mealQuantity} Meals)</h5>
                         <ul>
                             ${shopListHtml}
                         </ul>
