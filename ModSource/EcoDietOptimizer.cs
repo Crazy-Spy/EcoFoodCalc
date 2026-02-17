@@ -4,6 +4,7 @@ namespace Eco.Mods.TechTree
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using System.Reflection;
     using System.IO;
     using Eco.Core.Plugins.Interfaces;
     using Eco.Gameplay.Items;
@@ -149,6 +150,9 @@ namespace Eco.Mods.TechTree
                     case "debug":
                         DebugMode = !DebugMode;
                         user.Player.MsgLocStr($"Debug mode is now {(DebugMode ? "ON" : "OFF")}.");
+                        break;
+                    case "probe":
+                        ProbeReflection(user);
                         break;
                     default:
                         if (arg.StartsWith("config "))
@@ -433,18 +437,81 @@ namespace Eco.Mods.TechTree
             return false;
         }
 
+        private static void ProbeReflection(User user)
+        {
+             var sb = new StringBuilder();
+             sb.AppendLine("Reflection Probe:");
+
+             try {
+                 // User Props
+                 sb.AppendLine("User Properties:");
+                 foreach(var p in user.GetType().GetProperties()) sb.Append(p.Name + ", ");
+                 sb.AppendLine();
+
+                 // Stomach Props
+                 var stomach = user.GetType().GetProperty("Stomach")?.GetValue(user);
+                 if (stomach != null)
+                 {
+                     sb.AppendLine("Stomach Properties:");
+                     foreach(var p in stomach.GetType().GetProperties()) sb.Append(p.Name + ", ");
+                     sb.AppendLine();
+
+                     // TasteBuds Props
+                     var tb = stomach.GetType().GetProperty("TasteBuds")?.GetValue(stomach);
+                     if (tb != null)
+                     {
+                          sb.AppendLine("TasteBuds Properties:");
+                          foreach(var p in tb.GetType().GetProperties()) sb.Append(p.Name + ", ");
+                          sb.AppendLine();
+                     }
+                 }
+                 else sb.AppendLine("Stomach is null.");
+             } catch (Exception ex) { sb.AppendLine($"Probe Error: {ex.Message}"); }
+
+             user.Player.MsgLocStr(sb.ToString());
+        }
+
         // Helpers for Eco API interaction
         private static bool IsDiscovered(User user, FoodItem food, ref bool failed)
         {
-            if (failed) return true;
+            // 1. Check Stomach Contents (Recent History) - Strongest positive signal
             try
             {
-                // Check DiscoveryManager using reflection to avoid hard dependency on specific API version
-                // Try multiple likely namespace locations for DiscoveryManager
+                 var stomach = user.GetType().GetProperty("Stomach")?.GetValue(user);
+                 if (stomach != null)
+                 {
+                     // Check Contents (current digestion)
+                     var contentsProp = stomach.GetType().GetProperty("Contents");
+                     if (contentsProp != null)
+                     {
+                         var contents = contentsProp.GetValue(stomach) as System.Collections.IEnumerable;
+                         if (contents != null)
+                         {
+                             foreach (var entry in contents)
+                             {
+                                 var typeProp = entry.GetType().GetProperty("FoodType") ?? entry.GetType().GetProperty("Type");
+                                 if (typeProp != null)
+                                 {
+                                     var type = typeProp.GetValue(entry) as Type;
+                                     if (type == food.Type) return true;
+                                 }
+                             }
+                         }
+                     }
+                 }
+            }
+            catch { }
+
+            if (failed) return false; // Fail safe to NOT discovered
+
+            try
+            {
+                // Check DiscoveryManager using reflection
                 var managerTypeNames = new[] {
                     "Eco.Gameplay.Systems.DiscoveryManager, Eco.Gameplay",
                     "Eco.Gameplay.Components.DiscoveryManager, Eco.Gameplay",
-                    "Eco.Gameplay.DynamicLayers.DiscoveryManager, Eco.Gameplay"
+                    "Eco.Gameplay.DynamicLayers.DiscoveryManager, Eco.Gameplay",
+                    "Eco.Gameplay.Systems.Discovery.DiscoveryManager, Eco.Gameplay"
                 };
 
                 foreach(var typeName in managerTypeNames)
@@ -459,11 +526,17 @@ namespace Eco.Mods.TechTree
                         {
                             var manager = objProp.GetValue(null);
 
-                            // Try IsDiscovered(Type, User)
+                            // Try IsDiscovered(Type, User) or IsDiscovered(User, Type)
                             var method = type.GetMethod("IsDiscovered", new[] { typeof(Type), typeof(User) });
+                            if (method == null) method = type.GetMethod("IsDiscovered", new[] { typeof(User), typeof(Type) });
+
                             if (method != null)
                             {
-                                var result = (bool)method.Invoke(manager, new object[] { food.Type, user });
+                                var args = method.GetParameters()[0].ParameterType == typeof(Type)
+                                           ? new object[] { food.Type, user }
+                                           : new object[] { user, food.Type };
+
+                                var result = (bool)method.Invoke(manager, args);
                                 if (DebugMode && !result) user.Player.MsgLocStr($"Debug: {food.DisplayName} is NOT discovered.");
                                 return result;
                             }
@@ -471,14 +544,14 @@ namespace Eco.Mods.TechTree
                     }
                 }
 
-                if (DebugMode) user.Player.MsgLocStr("Debug: DiscoveryManager not found. Defaulting to discovered.");
-                return true;
+                if (DebugMode) user.Player.MsgLocStr("Debug: DiscoveryManager not found. Defaulting to NOT discovered (Safe Mode).");
+                return false; // Default to FALSE to avoid spoilers
             }
             catch (Exception ex)
             {
                 if (DebugMode) user.Player.MsgLocStr($"Debug: Discovery check error: {ex.Message}");
                 failed = true;
-                return true;
+                return false;
             }
         }
 
