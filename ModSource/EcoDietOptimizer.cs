@@ -294,12 +294,18 @@ namespace Eco.Mods.TechTree
             bool discoveryApiFailed = false;
             bool tasteApiFailed = false;
 
+            // Pre-fetch bad foods
+            HashSet<Type> badFoodTypes = GetBadFoodTypes(user, ref tasteApiFailed);
+
             foreach(var food in allFoods)
             {
                 if (IsHiddenOrBlacklisted(food)) continue;
 
                 if (!IsDiscovered(user, food, ref discoveryApiFailed)) continue;
-                if (IsBadOrHorrible(user, food, ref tasteApiFailed)) continue;
+
+                // If taste API worked, exclude bad foods. If failed, allow all.
+                if (!tasteApiFailed && badFoodTypes.Contains(food.Type)) continue;
+
                 if (food.Calories <= 0) continue;
                 if (food.Calories > stomachSize) continue;
 
@@ -654,40 +660,69 @@ namespace Eco.Mods.TechTree
             }
         }
 
-        private static bool IsBadOrHorrible(User user, FoodItem food, ref bool failed)
+        private static HashSet<Type> GetBadFoodTypes(User user, ref bool failed)
         {
-            if (failed) return false; // If API failed, assume food is OK (don't filter it out)
+            var badFoods = new HashSet<Type>();
+
             try
             {
                 var stomachProp = user.GetType().GetProperty("Stomach");
-                if (stomachProp != null)
+                if (stomachProp == null) { failed = true; return badFoods; }
+
+                var stomach = stomachProp.GetValue(user);
+                if (stomach == null) { failed = true; return badFoods; }
+
+                var tasteBudsProp = stomach.GetType().GetProperty("TasteBuds");
+                if (tasteBudsProp == null) { failed = true; return badFoods; }
+
+                var tasteBuds = tasteBudsProp.GetValue(stomach);
+                if (tasteBuds == null) { failed = true; return badFoods; }
+
+                // Reflect over "FoodToTaste" dictionary
+                var foodToTasteProp = tasteBuds.GetType().GetProperty("FoodToTaste") ?? tasteBuds.GetType().GetField("FoodToTaste") as MemberInfo;
+                if (foodToTasteProp == null) { failed = true; return badFoods; }
+
+                object foodToTasteDict = null;
+                if (foodToTasteProp is PropertyInfo pInfo) foodToTasteDict = pInfo.GetValue(tasteBuds);
+                else if (foodToTasteProp is FieldInfo fInfo) foodToTasteDict = fInfo.GetValue(tasteBuds);
+
+                if (foodToTasteDict is System.Collections.IDictionary dict)
                 {
-                    var stomach = stomachProp.GetValue(user);
-                    if (stomach != null)
-                    {
-                        var tasteBudsProp = stomach.GetType().GetProperty("TasteBuds");
-                        if (tasteBudsProp != null)
-                        {
-                            var tasteBuds = tasteBudsProp.GetValue(stomach);
-                            if (tasteBuds != null)
-                            {
-                                var getTasteMethod = tasteBuds.GetType().GetMethod("GetTaste", new[] { typeof(Type) });
-                                if (getTasteMethod != null)
-                                {
-                                    var result = getTasteMethod.Invoke(tasteBuds, new object[] { food.Type });
-                                    if (result is float f && f < 0.5f) return true;
-                                }
-                            }
-                        }
-                    }
+                     foreach (System.Collections.DictionaryEntry entry in dict)
+                     {
+                         // entry.Key is Type (Food Type), entry.Value is TasteData (or similar)
+                         var type = entry.Key as Type;
+                         var tasteData = entry.Value;
+
+                         if (type != null && tasteData != null)
+                         {
+                             // Check "Preference" enum property on TasteData
+                             var prefProp = tasteData.GetType().GetProperty("Preference");
+                             if (prefProp != null)
+                             {
+                                 var enumVal = prefProp.GetValue(tasteData);
+                                 string prefName = enumVal.ToString(); // e.g., "Horrible", "Bad"
+
+                                 // Add logic to exclude bad foods
+                                 if (prefName.Equals("Horrible", StringComparison.OrdinalIgnoreCase) ||
+                                     prefName.Equals("Bad", StringComparison.OrdinalIgnoreCase) ||
+                                     prefName.Equals("Worst", StringComparison.OrdinalIgnoreCase) ||
+                                     prefName.Equals("TotalDisgust", StringComparison.OrdinalIgnoreCase))
+                                 {
+                                     badFoods.Add(type);
+                                 }
+                             }
+                         }
+                     }
                 }
-                return false;
             }
-            catch
+            catch (Exception ex)
             {
                 failed = true;
-                return false;
+                if (DebugMode) user.Player.MsgLocStr($"Debug: Taste API Error: {ex.Message}");
             }
+
+            return badFoods;
         }
     }
 }
