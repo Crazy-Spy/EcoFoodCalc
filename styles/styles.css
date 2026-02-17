@@ -343,6 +343,11 @@ select {
     display: flex;
     gap: var(--spacing-03);
 }
+.form-group-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-03);
+}
 .form-group-container {
     display: flex;
     gap: var(--spacing-05);
@@ -391,6 +396,9 @@ select {
     }
 }
 .calorie-goal {
+    margin-bottom: var(--spacing-05);
+}
+.diet-controls {
     margin-bottom: var(--spacing-05);
 }
 .diet-options-container {
@@ -575,7 +583,7 @@ select {
 .diet-card {
     flex: 1;
     min-width: 250px;
-    background-color: var(--background-layer-2); /* Light grey background */
+    background-color: var(--background-layer-3); /* Light grey background */
     padding: var(--spacing-05);
     border-radius: var(--radius);
     border: 1px solid var(--border-normal);

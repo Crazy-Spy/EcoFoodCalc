@@ -1,6 +1,7 @@
 import {
     initApp,
     sortTable,
+    refreshUI,
     updateStomachSize,
     updateMealQuantity,
     setGlobalTag,
@@ -23,6 +24,7 @@ window.importUserData = () => {
     const file = document.getElementById('import-file-input').files[0];
     importUserData(file);
 };
+window.refreshUI = refreshUI;
 window.updateStomachSize = updateStomachSize;
 window.updateMealQuantity = updateMealQuantity;
 window.setGlobalTag = setGlobalTag;

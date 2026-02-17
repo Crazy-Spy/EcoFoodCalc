@@ -49,6 +49,7 @@ import {
 import { getSuggestedDiets } from "./logic.js";
 
 import {
+  renderDietControls,
   renderSuggestedDiet,
   renderSearchInterface,
   renderEvaluatedTableComponent,
@@ -77,6 +78,7 @@ export function refreshUI() {
   );
 
   // 1. Calculate and Render Suggested Diet
+  renderDietControls();
   const dietResult = getSuggestedDiets();
   setLastDietResult(dietResult);
   renderSuggestedDiet(dietResult);
@@ -332,8 +334,7 @@ export async function initApp() {
     const stomachSizeInput = document.getElementById("stomach-size-input");
     if (stomachSizeInput) stomachSizeInput.value = getStomachSize();
 
-    const mealQuantityInput = document.getElementById("meal-quantity-input");
-    if (mealQuantityInput) mealQuantityInput.value = getMealQuantity();
+    // mealQuantityInput is handled by renderDietControls inside refreshUI
 
     refreshUI();
     updateFoodContainerStatus("");

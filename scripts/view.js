@@ -154,14 +154,14 @@ function renderDietOption(dietAnalysis, optionNumber) {
                  <div class="diet-cards-container">
                     <!-- EAT CARD -->
                     <div class="diet-card eat-card">
-                        <h5>Eat (Per Meal)</h5>
+                        <h5>EAT (Per Meal)</h5>
                         <ul>
                             ${eatListHtml}
                         </ul>
                     </div>
                     <!-- SHOPPING CARD -->
                     <div class="diet-card shop-card">
-                        <h5>Shopping list<br>(For ${mealQuantity} Meals)</h5>
+                        <h5>SHOPPING LIST (For ${mealQuantity} Meals)</h5>
                         <ul>
                             ${shopListHtml}
                         </ul>
@@ -302,32 +302,61 @@ export function generateSelectHtml(tagType, foods) {
 
 // --- DOM Manipulation ---
 
+export function renderDietControls() {
+  const controlsContainer = document.getElementById("diet-controls-container");
+  if (!controlsContainer) return;
+
+  const mealQuantity = getMealQuantity() || 1;
+
+  // Check if controls already exist to avoid replacing them (and losing focus)
+  const existingInput = document.getElementById("meal-quantity-input");
+  if (existingInput) {
+      if (existingInput.value != mealQuantity) {
+          existingInput.value = mealQuantity;
+      }
+      return;
+  }
+
+  controlsContainer.innerHTML = `
+        <div class="diet-controls">
+            <div class="form-group-row">
+                <label for="meal-quantity-input">Number of meals:</label>
+                <input
+                    type="number"
+                    id="meal-quantity-input"
+                    value="${mealQuantity}"
+                    min="1"
+                    max="100"
+                    onchange="window.updateMealQuantity(this.value)"
+                />
+                <button onclick="window.refreshUI()" class="button button-primary">
+                    <i class="ph ph-arrows-clockwise icon"></i> Refresh
+                </button>
+            </div>
+        </div>`;
+}
+
 export function renderSuggestedDiet(result) {
   const listContainer = document.getElementById("diet-suggestion-container");
-  const stomachSize = getStomachSize();
+  if (!listContainer) return;
 
-  let finalHtml = `<p class="calorie-goal">Goal Calories: <strong>${stomachSize} Kcal</strong></p><div class="diet-options-container">`;
+  let contentHtml = `<div class="diet-options-container">`;
 
   if (result.error) {
     if (result.error === "NO_SUITABLE_FOODS") {
-      listContainer.innerHTML =
-        finalHtml +
-        `<p style="color: red;">No suitable foods available based on your current evaluation. Please evaluate some items as GOOD, OK, or DELICIOUS.</p></div>`;
+      contentHtml += `<p style="color: red;">No suitable foods available based on your current evaluation. Please evaluate some items as GOOD, OK, or DELICIOUS.</p>`;
     } else if (result.error === "NO_COMBINATION_FOUND") {
-      listContainer.innerHTML =
-        finalHtml +
-        `<p style="color: red;">Could not find any diet combination that fits the stomach size limit.</p></div>`;
+      contentHtml += `<p style="color: red;">Could not find any diet combination that fits the stomach size limit.</p>`;
     }
-    return;
+  } else {
+    // Render Results
+    result.diets.forEach((diet, index) => {
+      contentHtml += renderDietOption(diet, index + 1);
+    });
   }
 
-  // Render Results
-  result.diets.forEach((diet, index) => {
-    finalHtml += renderDietOption(diet, index + 1);
-  });
-
-  finalHtml += "</div>";
-  listContainer.innerHTML = finalHtml;
+  contentHtml += "</div>";
+  listContainer.innerHTML = contentHtml;
 }
 
 export function renderSearchInterface(foods) {

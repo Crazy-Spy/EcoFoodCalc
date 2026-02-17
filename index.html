@@ -83,17 +83,6 @@
                             />
                         </div>
                         <div class="form-group">
-                            <label for="meal-quantity-input">Number of Meals:</label>
-                            <input
-                                type="number"
-                                id="meal-quantity-input"
-                                value="1"
-                                min="1"
-                                max="100"
-                                onchange="updateMealQuantity(this.value)"
-                            />
-                        </div>
-                        <div class="form-group">
                             <label for="favorite-food">Favorite Food:</label>
                             <select
                                 id="favorite-food"
@@ -140,8 +129,11 @@
             <header id="column-left">
                 <h2>Suggested Diet Optimization</h2>
             </header>
-            <main id="diet-suggestion-container">
-                <p>Processing optimization algorithm...</p>
+            <main>
+                <div id="diet-controls-container"></div>
+                <div id="diet-suggestion-container">
+                    <p>Processing optimization algorithm...</p>
+                </div>
             </main>
         </div>
         
