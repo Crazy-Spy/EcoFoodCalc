@@ -115,8 +115,8 @@ namespace Eco.Mods.TechTree
             }
         }
 
-        [ChatCommand("diet", "Suggests an optimal diet based on your stomach size and tastes.")]
-        public static void DietCommand(User user, string arg = "")
+        [ChatCommand("Suggests an optimal diet based on your stomach size and tastes.", "diet")]
+        public static void Diet(User user, string arg = "")
         {
             try
             {
@@ -280,6 +280,9 @@ namespace Eco.Mods.TechTree
 
             foreach(var food in allFoods)
             {
+                // Filter out developer items or hidden items if property exists
+                if (IsHidden(food)) continue;
+
                 if (!IsDiscovered(user, food, ref discoveryApiFailed)) continue;
                 if (IsBadOrHorrible(user, food, ref tasteApiFailed)) continue;
                 if (food.Calories <= 0) continue;
@@ -415,6 +418,21 @@ namespace Eco.Mods.TechTree
              user.Player.MsgLocStr(sb.ToString());
         }
 
+        private static bool IsHidden(FoodItem food)
+        {
+            try
+            {
+                // Check 'Hidden' property
+                var prop = food.GetType().GetProperty("Hidden");
+                if (prop != null && (bool)prop.GetValue(food)) return true;
+
+                // Check 'Tag' if necessary (e.g. "Dev", "Hidden")
+                // ...
+            }
+            catch {}
+            return false;
+        }
+
         // Helpers for Eco API interaction
         private static bool IsDiscovered(User user, FoodItem food, ref bool failed)
         {
@@ -422,35 +440,38 @@ namespace Eco.Mods.TechTree
             try
             {
                 // Check DiscoveryManager using reflection to avoid hard dependency on specific API version
-                var type = Type.GetType("Eco.Gameplay.Systems.DiscoveryManager, Eco.Gameplay");
-                if (type != null)
+                // Try multiple likely namespace locations for DiscoveryManager
+                var managerTypeNames = new[] {
+                    "Eco.Gameplay.Systems.DiscoveryManager, Eco.Gameplay",
+                    "Eco.Gameplay.Components.DiscoveryManager, Eco.Gameplay",
+                    "Eco.Gameplay.DynamicLayers.DiscoveryManager, Eco.Gameplay"
+                };
+
+                foreach(var typeName in managerTypeNames)
                 {
-                    var objProp = type.GetProperty("Obj");
-                    if (objProp != null)
+                    var type = Type.GetType(typeName);
+                    if (type != null)
                     {
-                        var manager = objProp.GetValue(null);
+                        var objProp = type.GetProperty("Obj"); // Singleton usually Obj or Instance
+                        if (objProp == null) objProp = type.GetProperty("Instance");
 
-                        // Try IsDiscovered(Type, User)
-                        var method = type.GetMethod("IsDiscovered", new[] { typeof(Type), typeof(User) });
-                        if (method != null)
+                        if (objProp != null)
                         {
-                            var result = (bool)method.Invoke(manager, new object[] { food.Type, user });
-                            if (DebugMode && !result) user.Player.MsgLocStr($"Debug: {food.DisplayName} is NOT discovered.");
-                            return result;
-                        }
+                            var manager = objProp.GetValue(null);
 
-                        // Try IsDiscovered(Item, User) fallback
-                        var methodItem = type.GetMethod("IsDiscovered", new[] { typeof(Item), typeof(User) });
-                        if (methodItem != null)
-                        {
-                            var result = (bool)methodItem.Invoke(manager, new object[] { food, user });
-                            if (DebugMode && !result) user.Player.MsgLocStr($"Debug: {food.DisplayName} is NOT discovered (Item overload).");
-                            return result;
+                            // Try IsDiscovered(Type, User)
+                            var method = type.GetMethod("IsDiscovered", new[] { typeof(Type), typeof(User) });
+                            if (method != null)
+                            {
+                                var result = (bool)method.Invoke(manager, new object[] { food.Type, user });
+                                if (DebugMode && !result) user.Player.MsgLocStr($"Debug: {food.DisplayName} is NOT discovered.");
+                                return result;
+                            }
                         }
                     }
                 }
 
-                if (DebugMode) user.Player.MsgLocStr("Debug: DiscoveryManager not found or method missing. Defaulting to discovered.");
+                if (DebugMode) user.Player.MsgLocStr("Debug: DiscoveryManager not found. Defaulting to discovered.");
                 return true;
             }
             catch (Exception ex)
