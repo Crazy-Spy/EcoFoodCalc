@@ -45,6 +45,8 @@ namespace Eco.Mods.TechTree
         private static string CacheFilePath = "EcoDietOptimizer_Cache.txt";
         private static Dictionary<string, DietResult> DietCache = new Dictionary<string, DietResult>();
         private static Random rng = new Random();
+        private static int CooldownMinutes = 1440; // Default 24 hours
+        private static bool DebugMode = false;
 
         public void Initialize(TimedTask timer)
         {
@@ -114,15 +116,64 @@ namespace Eco.Mods.TechTree
         }
 
         [ChatCommand("diet", "Suggests an optimal diet based on your stomach size and tastes.")]
-        public static void DietCommand(User user, int meals = 0)
+        public static void DietCommand(User user, string arg = "")
         {
             try
             {
-                HandleDietRequest(user, meals);
+                if (string.IsNullOrWhiteSpace(arg))
+                {
+                    HandleDietRequest(user, 0);
+                    return;
+                }
+
+                if (int.TryParse(arg, out int meals))
+                {
+                    HandleDietRequest(user, meals);
+                    return;
+                }
+
+                switch (arg.ToLower())
+                {
+                    case "clear":
+                        if (DietCache.ContainsKey(user.Name))
+                        {
+                            DietCache.Remove(user.Name);
+                            SaveData();
+                            user.Player.MsgLocStr("Diet cache cleared.");
+                        }
+                        else
+                        {
+                            user.Player.MsgLocStr("No cached diet found.");
+                        }
+                        break;
+                    case "debug":
+                        DebugMode = !DebugMode;
+                        user.Player.MsgLocStr($"Debug mode is now {(DebugMode ? "ON" : "OFF")}.");
+                        break;
+                    default:
+                        if (arg.StartsWith("config "))
+                        {
+                            var parts = arg.Split(' ');
+                            if (parts.Length > 1 && int.TryParse(parts[1], out int mins))
+                            {
+                                CooldownMinutes = mins;
+                                user.Player.MsgLocStr($"Diet cooldown set to {CooldownMinutes} minutes.");
+                            }
+                            else
+                            {
+                                user.Player.MsgLocStr("Usage: /diet config <minutes>");
+                            }
+                        }
+                        else
+                        {
+                            user.Player.MsgLocStr("Usage: /diet [meals | clear | debug | config <minutes>]");
+                        }
+                        break;
+                }
             }
             catch (Exception ex)
             {
-                user.Player.MsgLocStr($"Error calculating diet: {ex.Message}");
+                user.Player.MsgLocStr($"Error: {ex.Message}");
             }
         }
 
@@ -136,15 +187,14 @@ namespace Eco.Mods.TechTree
             if (DietCache.ContainsKey(userId))
             {
                 var cached = DietCache[userId];
-                // 24 hours = 86400 seconds
-                if ((DateTime.Now - cached.GeneratedAt).TotalHours < 24)
+                if ((DateTime.Now - cached.GeneratedAt).TotalMinutes < CooldownMinutes)
                 {
                      if (meals > 0)
                          DisplayShoppingList(user, cached.Plan, meals);
                      else
                          DisplayDiet(user, cached.Plan);
 
-                     var remaining = TimeSpan.FromHours(24) - (DateTime.Now - cached.GeneratedAt);
+                     var remaining = TimeSpan.FromMinutes(CooldownMinutes) - (DateTime.Now - cached.GeneratedAt);
                      user.Player.MsgLocStr($"Next diet update available in {remaining.Hours}h {remaining.Minutes}m.");
                      return;
                 }
@@ -379,16 +429,33 @@ namespace Eco.Mods.TechTree
                     if (objProp != null)
                     {
                         var manager = objProp.GetValue(null);
-                        // IsDiscovered often takes (Type itemType, User user) or (Item item, User user)
-                        // We try Type first as it's more common in managers
+
+                        // Try IsDiscovered(Type, User)
                         var method = type.GetMethod("IsDiscovered", new[] { typeof(Type), typeof(User) });
-                        if (method != null) return (bool)method.Invoke(manager, new object[] { food.Type, user });
+                        if (method != null)
+                        {
+                            var result = (bool)method.Invoke(manager, new object[] { food.Type, user });
+                            if (DebugMode && !result) user.Player.MsgLocStr($"Debug: {food.DisplayName} is NOT discovered.");
+                            return result;
+                        }
+
+                        // Try IsDiscovered(Item, User) fallback
+                        var methodItem = type.GetMethod("IsDiscovered", new[] { typeof(Item), typeof(User) });
+                        if (methodItem != null)
+                        {
+                            var result = (bool)methodItem.Invoke(manager, new object[] { food, user });
+                            if (DebugMode && !result) user.Player.MsgLocStr($"Debug: {food.DisplayName} is NOT discovered (Item overload).");
+                            return result;
+                        }
                     }
                 }
+
+                if (DebugMode) user.Player.MsgLocStr("Debug: DiscoveryManager not found or method missing. Defaulting to discovered.");
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                if (DebugMode) user.Player.MsgLocStr($"Debug: Discovery check error: {ex.Message}");
                 failed = true;
                 return true;
             }
