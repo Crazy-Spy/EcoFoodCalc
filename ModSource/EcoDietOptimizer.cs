@@ -209,6 +209,8 @@ namespace Eco.Mods.TechTree
             bool failed = false;
             // Key: Preference (String), Value: List of Food Names
             var groupedFoods = GetGroupedFoodTypesFromTasteBuds(user, ref failed);
+            bool favDiscovered = IsFavoriteDiscovered(user);
+            bool worstDiscovered = IsWorstDiscovered(user);
 
             if (failed)
             {
@@ -218,28 +220,42 @@ namespace Eco.Mods.TechTree
 
             StringBuilder sb = new StringBuilder();
 
-            // Define Order
-            var order = new[] { "Favorite", "Delicious", "Good", "Ok", "Bad", "Horrible", "Worst" };
             int totalCount = 0;
 
-            // Handle Favorite and Worst explicitly at top if needed, but grouping is generic
-            // Per request: Favorite, Worst, then categories
+            // Colors
+            string cFavDel = "#00ff00";
+            string cGood   = "#7fff7f";
+            string cOk     = "#7f7f7f";
+            string cBad    = "#ff7f7f";
+            string cHorr   = "#f50000";
 
-            string GetGroup(string key) => groupedFoods.ContainsKey(key) ? string.Join(", ", groupedFoods[key]) : "Unknown"; // Join comma separated? Or list? User asked for list.
+            string ColorText(string text, string hex) => $"<color={hex}>{text}</color>";
 
             // Favorite
-            sb.AppendLine($"<b>Favorite:</b> { (groupedFoods.ContainsKey("Favorite") && groupedFoods["Favorite"].Any() ? groupedFoods["Favorite"].First() : "Unknown") }");
-            sb.AppendLine($"<b>Worst:</b> { (groupedFoods.ContainsKey("Worst") && groupedFoods["Worst"].Any() ? groupedFoods["Worst"].First() : "Unknown") }");
-
-            foreach(var category in order)
+            string favName = "Unknown";
+            if (favDiscovered && groupedFoods.ContainsKey("Favorite") && groupedFoods["Favorite"].Any())
             {
-                if (category == "Favorite" || category == "Worst") continue; // Already handled? Or list all?
-                // Request says: "--- Delicious --- <list>"
+                favName = groupedFoods["Favorite"].First();
+                totalCount += groupedFoods["Favorite"].Count;
+            }
+            sb.AppendLine($"<b>{ColorText("Favorite", cFavDel)}:</b> {favName}");
 
-                if (groupedFoods.ContainsKey(category) && groupedFoods[category].Count > 0)
+            // Worst
+            string worstName = "Unknown";
+            if (worstDiscovered && groupedFoods.ContainsKey("Worst") && groupedFoods["Worst"].Any())
+            {
+                worstName = groupedFoods["Worst"].First();
+                totalCount += groupedFoods["Worst"].Count;
+            }
+            sb.AppendLine($"<b>{ColorText("Worst", cHorr)}:</b> {worstName}");
+
+            // Group Output Helper
+            void AppendGroup(string key, string colorHex)
+            {
+                if (groupedFoods.ContainsKey(key) && groupedFoods[key].Count > 0)
                 {
-                    sb.AppendLine($"--- <b>{category}</b> ---");
-                    foreach(var food in groupedFoods[category])
+                    sb.AppendLine($"--- <b>{ColorText(key, colorHex)}</b> ---");
+                    foreach(var food in groupedFoods[key])
                     {
                         sb.AppendLine($"- {food}");
                         totalCount++;
@@ -247,9 +263,11 @@ namespace Eco.Mods.TechTree
                 }
             }
 
-            // Count Favorite and Worst too if they exist in dictionary but weren't printed in loop
-            if (groupedFoods.ContainsKey("Favorite")) totalCount += groupedFoods["Favorite"].Count;
-            if (groupedFoods.ContainsKey("Worst")) totalCount += groupedFoods["Worst"].Count;
+            AppendGroup("Delicious", cFavDel);
+            AppendGroup("Good", cGood);
+            AppendGroup("Ok", cOk);
+            AppendGroup("Bad", cBad);
+            AppendGroup("Horrible", cHorr);
 
             sb.AppendLine();
             sb.AppendLine($"Total of known foods: {totalCount}");
@@ -346,35 +364,6 @@ namespace Eco.Mods.TechTree
 
             var availableFoods = new List<FoodItem>();
             bool tasteApiFailed = false;
-
-            // Use the grouping helper but flatten for calculation
-            var groupedFoods = GetGroupedFoodTypesFromTasteBuds(user, ref tasteApiFailed);
-
-            if (!tasteApiFailed)
-            {
-                // Whitelist categories
-                var allowed = new[] { "Favorite", "Delicious", "Good", "Ok" };
-                int count = 0;
-
-                foreach(var kvp in groupedFoods)
-                {
-                    if (allowed.Contains(kvp.Key)) // Check ignore case? Helper normalizes keys?
-                    {
-                        foreach(var foodName in kvp.Value)
-                        {
-                            // We need the Item Object, not just name.
-                            // The helper currently returns Strings.
-                            // Optimization: Refactor helper to return Types or Items?
-                            // For now, let's look up by name or keep a Type mapping.
-                            // Better: Have helper return Dictionary<string, List<Type>> or FoodItem.
-                        }
-                    }
-                }
-            }
-
-            // RE-IMPLEMENTING using the robust "GetDiscoveredFoodTypes" style logic but with grouping awareness
-            // Actually, simply calling GetDiscoveredFoodTypesFromTasteBuds is cleaner for the optimizer
-            // But we need to ensure it matches the /diet taste output.
 
             var validFoodTypes = GetDiscoveredFoodTypesFromTasteBuds(user, ref tasteApiFailed);
             Log($"Taste API Failed: {tasteApiFailed}. Found {validFoodTypes.Count} foods via taste buds.");
@@ -554,7 +543,14 @@ namespace Eco.Mods.TechTree
                 float pp = (plan.Protein / total) * 100;
                 float fp = (plan.Fat / total) * 100;
                 float vp = (plan.Vitamins / total) * 100;
-                sb.AppendLine($"Expected balance: Carbs: {cp:F1}%, Protein: {pp:F1}%, Fat: {fp:F1}%, Vitamins: {vp:F1}%");
+
+                string cCarbs = "#e64a17";
+                string cProt  = "#e69d08";
+                string cFat   = "#deb719";
+                string cVit   = "#9fc80d";
+                string ColorText(string t, string h) => $"<color={h}>{t}</color>";
+
+                sb.AppendLine($"Expected balance: {ColorText("Carbs", cCarbs)}: {cp:F1}%, {ColorText("Protein", cProt)}: {pp:F1}%, {ColorText("Fat", cFat)}: {fp:F1}%, {ColorText("Vitamins", cVit)}: {vp:F1}%");
             }
             else
             {
@@ -771,6 +767,36 @@ namespace Eco.Mods.TechTree
             }
         }
 
+        private static bool IsFavoriteDiscovered(User user)
+        {
+            try
+            {
+                var stomach = user.GetType().GetProperty("Stomach")?.GetValue(user);
+                var tasteBuds = stomach?.GetType().GetProperty("TasteBuds")?.GetValue(stomach);
+                if (tasteBuds != null)
+                {
+                    var favProp = tasteBuds.GetType().GetProperty("FavoriteDiscovered");
+                    if (favProp != null) return (bool)favProp.GetValue(tasteBuds);
+                }
+            } catch {}
+            return false;
+        }
+
+        private static bool IsWorstDiscovered(User user)
+        {
+            try
+            {
+                var stomach = user.GetType().GetProperty("Stomach")?.GetValue(user);
+                var tasteBuds = stomach?.GetType().GetProperty("TasteBuds")?.GetValue(stomach);
+                if (tasteBuds != null)
+                {
+                    var worstProp = tasteBuds.GetType().GetProperty("WorstDiscovered");
+                    if (worstProp != null) return (bool)worstProp.GetValue(tasteBuds);
+                }
+            } catch {}
+            return false;
+        }
+
         private static List<Type> GetDiscoveredFoodTypesFromTasteBuds(User user, ref bool failed)
         {
             var validFoods = new List<Type>();
@@ -779,18 +805,23 @@ namespace Eco.Mods.TechTree
                 var dict = GetGroupedFoodTypesFromTasteBuds(user, ref failed);
                 if (failed) return validFoods;
 
-                // Flatten allowed groups
                 var allowed = new[] { "Favorite", "Delicious", "Good", "Ok" };
+                bool favDisc = IsFavoriteDiscovered(user);
+
                 foreach(var kvp in dict)
                 {
-                    // Check if key is in allowed list (ignoring case)
+                    // Special check: Only include Favorite if it's actually discovered
+                    if (kvp.Key.Equals("Favorite", StringComparison.OrdinalIgnoreCase) && !favDisc)
+                        continue;
+
                     if (allowed.Any(a => a.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase)))
                     {
-                        // We need Types here, but the grouped helper returns Strings (Food Names).
-                        // WE NEED TO DUPLICATE LOGIC OR REFACTOR.
-                        // To avoid complex re-architecture now, I will essentially copy the iteration logic
-                        // but return Types instead of Strings, filtered by allowed prefs.
-                        // Actually, let's just use the iteration below which does exactly this.
+                        // We need to re-find types.
+                        // To avoid double reflection, we can just grab from dict if dict stored Types.
+                        // But dict stores strings.
+                        // So we just re-iterate below for types.
+                        // Optimization: GetGrouped could return complex object or we just do loop here.
+                        // Let's use the loop below for "Type" extraction but with strict matching logic.
                     }
                 }
             } catch {}
@@ -820,6 +851,8 @@ namespace Eco.Mods.TechTree
                 var enumerable = foodToTasteDict as System.Collections.IEnumerable;
                 if (enumerable != null)
                 {
+                     bool favDisc = IsFavoriteDiscovered(user);
+
                      foreach (var entry in enumerable)
                      {
                          try
@@ -851,11 +884,13 @@ namespace Eco.Mods.TechTree
                              {
                                  string prefName = enumVal.ToString();
 
-                                 // Strict Whitelist
-                                 if (prefName.Equals("Favorite", StringComparison.OrdinalIgnoreCase) ||
-                                     prefName.Equals("Delicious", StringComparison.OrdinalIgnoreCase) ||
-                                     prefName.Equals("Good", StringComparison.OrdinalIgnoreCase) ||
-                                     prefName.Equals("Ok", StringComparison.OrdinalIgnoreCase))
+                                 if (prefName.Equals("Favorite", StringComparison.OrdinalIgnoreCase))
+                                 {
+                                     if (favDisc) validFoods.Add(type);
+                                 }
+                                 else if (prefName.Equals("Delicious", StringComparison.OrdinalIgnoreCase) ||
+                                          prefName.Equals("Good", StringComparison.OrdinalIgnoreCase) ||
+                                          prefName.Equals("Ok", StringComparison.OrdinalIgnoreCase))
                                  {
                                      validFoods.Add(type);
                                  }
