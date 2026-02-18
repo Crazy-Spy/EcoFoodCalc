@@ -173,6 +173,9 @@ namespace Eco.Mods.TechTree
                     case "probe":
                         ProbeReflection(user);
                         break;
+                    case "taste":
+                        ShowTasteList(user);
+                        break;
                     default:
                         if (arg.StartsWith("config "))
                         {
@@ -189,7 +192,7 @@ namespace Eco.Mods.TechTree
                         }
                         else
                         {
-                            user.Player.MsgLocStr("Usage: /diet [meals | clear | debug | strict | config <minutes>]");
+                            user.Player.MsgLocStr("Usage: /diet [meals | clear | debug | strict | config <minutes> | taste]");
                         }
                         break;
                 }
@@ -199,6 +202,32 @@ namespace Eco.Mods.TechTree
                 user.Player.MsgLocStr($"Error: {ex.Message}");
                 Log($"Error in SuggestDiet: {ex}");
             }
+        }
+
+        private static void ShowTasteList(User user)
+        {
+            bool failed = false;
+            var foods = GetDiscoveredFoodTypesFromTasteBuds(user, ref failed);
+
+            if (failed)
+            {
+                user.Player.MsgLocStr("Failed to retrieve taste list. Check debug log.");
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("<b>Your Known Foods (Good+):</b>");
+            foreach(var type in foods)
+            {
+                try
+                {
+                    var item = Item.Get(type);
+                    if (item != null)
+                        sb.AppendLine($"- {item.DisplayName.ToString()}");
+                }
+                catch {}
+            }
+            user.Player.MsgLocStr(sb.ToString());
         }
 
         private static void HandleDietRequest(User user, int meals)
@@ -289,13 +318,11 @@ namespace Eco.Mods.TechTree
             var availableFoods = new List<FoodItem>();
             bool tasteApiFailed = false;
 
-            // Use TasteBuds.FoodToTaste as the primary source of truth for "Available Foods"
             var discoveredAndTastedFoods = GetDiscoveredFoodTypesFromTasteBuds(user, ref tasteApiFailed);
             Log($"Taste API Failed: {tasteApiFailed}. Found {discoveredAndTastedFoods.Count} foods via taste buds.");
 
             if (tasteApiFailed)
             {
-                 // Fallback to old discovery logic if TasteBuds fails completely
                  user.Player.MsgLocStr("Warning: Taste API unavailable. Falling back to basic discovery check.");
                  IEnumerable<FoodItem> allFoods = null;
                  try
@@ -332,7 +359,6 @@ namespace Eco.Mods.TechTree
             }
             else
             {
-                // Strict TasteBuds Source Logic
                 foreach(var type in discoveredAndTastedFoods)
                 {
                     try
@@ -766,11 +792,19 @@ namespace Eco.Mods.TechTree
                                  continue;
                              }
 
-                             // Check "Preference" enum property on TasteData
+                             // Check "Preference" property OR field on TasteData
+                             // Log showed "Preference property not found", so likely a Field.
+                             object enumVal = null;
                              var prefProp = valueObj.GetType().GetProperty("Preference");
-                             if (prefProp != null)
+                             if (prefProp != null) enumVal = prefProp.GetValue(valueObj);
+                             else
                              {
-                                 var enumVal = prefProp.GetValue(valueObj);
+                                 var prefField = valueObj.GetType().GetField("Preference");
+                                 if (prefField != null) enumVal = prefField.GetValue(valueObj);
+                             }
+
+                             if (enumVal != null)
+                             {
                                  string prefName = enumVal.ToString();
 
                                  // Logic: Exclude bad foods, INCLUDE everything else
@@ -784,7 +818,7 @@ namespace Eco.Mods.TechTree
                              }
                              else
                              {
-                                 Log($"Preference property not found on {valueObj.GetType().FullName}");
+                                 Log($"Preference property/field not found on {valueObj.GetType().FullName}");
                              }
                          }
                          catch (Exception innerEx)
