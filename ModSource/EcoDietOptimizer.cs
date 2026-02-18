@@ -39,6 +39,7 @@ namespace Eco.Mods.TechTree
         public string GetCategory() => "User";
 
         private static string CacheFilePath = "EcoDietOptimizer_Cache.txt";
+        private static string LogFilePath = "EcoDietOptimizer_Log.txt";
         private static Dictionary<string, DietResult> DietCache = new Dictionary<string, DietResult>();
         private static readonly object _lock = new object();
         private static Random rng = new Random();
@@ -49,6 +50,19 @@ namespace Eco.Mods.TechTree
         public void Initialize(TimedTask timer)
         {
             LoadData();
+        }
+
+        private static void Log(string message)
+        {
+            if (!DebugMode) return;
+            try
+            {
+                lock(_lock)
+                {
+                    File.AppendAllText(LogFilePath, $"{DateTime.Now}: {message}{Environment.NewLine}");
+                }
+            }
+            catch {}
         }
 
         private static void LoadData()
@@ -150,6 +164,7 @@ namespace Eco.Mods.TechTree
                     case "debug":
                         DebugMode = !DebugMode;
                         user.Player.MsgLocStr($"Debug mode is now {(DebugMode ? "ON" : "OFF")}.");
+                        Log("Debug mode enabled via chat.");
                         break;
                     case "strict":
                         StrictMode = !StrictMode;
@@ -182,6 +197,7 @@ namespace Eco.Mods.TechTree
             catch (Exception ex)
             {
                 user.Player.MsgLocStr($"Error: {ex.Message}");
+                Log($"Error in SuggestDiet: {ex}");
             }
         }
 
@@ -247,6 +263,7 @@ namespace Eco.Mods.TechTree
 
         private static DietPlan FindBestDiet(User user)
         {
+            Log($"Starting diet calculation for {user.Name}");
             float stomachSize = 3000;
             try {
                 var stomachProp = user.GetType().GetProperty("Stomach");
@@ -260,12 +277,14 @@ namespace Eco.Mods.TechTree
                     }
                 }
             } catch { }
+            Log($"Stomach size: {stomachSize}");
 
             var availableFoods = new List<FoodItem>();
             bool tasteApiFailed = false;
 
             // Use TasteBuds.FoodToTaste as the primary source of truth for "Available Foods"
             var discoveredAndTastedFoods = GetDiscoveredFoodTypesFromTasteBuds(user, ref tasteApiFailed);
+            Log($"Taste API Failed: {tasteApiFailed}. Found {discoveredAndTastedFoods.Count} foods via taste buds.");
 
             if (tasteApiFailed)
             {
@@ -320,10 +339,14 @@ namespace Eco.Mods.TechTree
                             availableFoods.Add(food);
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log($"Failed to get item from type {type}: {ex.Message}");
+                    }
                 }
             }
 
+            Log($"Total available foods for calculation: {availableFoods.Count}");
             if (availableFoods.Count == 0) return null;
 
             int MAX_ITERATIONS = 5000;
@@ -439,11 +462,11 @@ namespace Eco.Mods.TechTree
                 float pp = (plan.Protein / total) * 100;
                 float fp = (plan.Fat / total) * 100;
                 float vp = (plan.Vitamins / total) * 100;
-                sb.AppendLine($"Expected balance: Carbs: {cp:F0} %, Protein: {pp:F0} %, Fat: {fp:F0} %, Vitamins: {vp:F0} %");
+                sb.AppendLine($"Expected balance: Carbs: {cp:F1}%, Protein: {pp:F1}%, Fat: {fp:F1}%, Vitamins: {vp:F1}%");
             }
             else
             {
-                sb.AppendLine("Expected balance: Carbs: 0 %, Protein: 0 %, Fat: 0 %, Vitamins: 0 %");
+                sb.AppendLine("Expected balance: Carbs: 0.0%, Protein: 0.0%, Fat: 0.0%, Vitamins: 0.0%");
             }
 
             user.Player.MsgLocStr(sb.ToString());
@@ -670,39 +693,54 @@ namespace Eco.Mods.TechTree
         private static List<Type> GetDiscoveredFoodTypesFromTasteBuds(User user, ref bool failed)
         {
             var validFoods = new List<Type>();
+            Log("Entering GetDiscoveredFoodTypesFromTasteBuds");
 
             try
             {
                 var stomachProp = user.GetType().GetProperty("Stomach");
-                if (stomachProp == null) { failed = true; return validFoods; }
+                if (stomachProp == null) { Log("Stomach Property Null"); failed = true; return validFoods; }
 
                 var stomach = stomachProp.GetValue(user);
-                if (stomach == null) { failed = true; return validFoods; }
+                if (stomach == null) { Log("Stomach Value Null"); failed = true; return validFoods; }
 
                 var tasteBudsProp = stomach.GetType().GetProperty("TasteBuds");
-                if (tasteBudsProp == null) { failed = true; return validFoods; }
+                if (tasteBudsProp == null) { Log("TasteBuds Property Null"); failed = true; return validFoods; }
 
                 var tasteBuds = tasteBudsProp.GetValue(stomach);
-                if (tasteBuds == null) { failed = true; return validFoods; }
+                if (tasteBuds == null) { Log("TasteBuds Value Null"); failed = true; return validFoods; }
 
                 // Reflect over "FoodToTaste" dictionary
                 var foodToTasteProp = tasteBuds.GetType().GetProperty("FoodToTaste") ?? tasteBuds.GetType().GetField("FoodToTaste") as MemberInfo;
-                if (foodToTasteProp == null) { failed = true; return validFoods; }
+                if (foodToTasteProp == null) { Log("FoodToTaste Member Null"); failed = true; return validFoods; }
 
                 object foodToTasteDict = null;
                 if (foodToTasteProp is PropertyInfo pInfo) foodToTasteDict = pInfo.GetValue(tasteBuds);
                 else if (foodToTasteProp is FieldInfo fInfo) foodToTasteDict = fInfo.GetValue(tasteBuds);
 
+                if (foodToTasteDict == null) { Log("FoodToTaste Dictionary Null"); failed = true; return validFoods; }
+
                 if (foodToTasteDict is System.Collections.IDictionary dict)
                 {
+                     Log($"FoodToTaste Count: {dict.Count}");
                      foreach (System.Collections.DictionaryEntry entry in dict)
                      {
-                         // entry.Key is Type (Food Type), entry.Value is TasteData (or similar)
-                         var type = entry.Key as Type;
-                         var tasteData = entry.Value;
-
-                         if (type != null && tasteData != null)
+                         try
                          {
+                             // entry.Key is Type (Food Type), entry.Value is TasteData (or similar)
+                             var type = entry.Key as Type;
+                             var tasteData = entry.Value;
+
+                             if (type == null)
+                             {
+                                 Log($"Key is null or not Type: {entry.Key?.GetType().FullName}");
+                                 continue;
+                             }
+                             if (tasteData == null)
+                             {
+                                 Log($"Value is null for key {type.Name}");
+                                 continue;
+                             }
+
                              // Check "Preference" enum property on TasteData
                              var prefProp = tasteData.GetType().GetProperty("Preference");
                              if (prefProp != null)
@@ -719,14 +757,28 @@ namespace Eco.Mods.TechTree
                                      validFoods.Add(type);
                                  }
                              }
+                             else
+                             {
+                                 Log($"Preference property not found on {tasteData.GetType().FullName}");
+                             }
+                         }
+                         catch (Exception innerEx)
+                         {
+                             Log($"Error processing entry: {innerEx.Message}");
                          }
                      }
+                }
+                else
+                {
+                    Log($"FoodToTaste is not IDictionary: {foodToTasteDict.GetType().FullName}");
+                    failed = true;
                 }
             }
             catch (Exception ex)
             {
                 failed = true;
                 if (DebugMode) user.Player.MsgLocStr($"Debug: Taste API Error: {ex.Message}");
+                Log($"Debug: Taste API Error Full: {ex}");
             }
 
             return validFoods;
