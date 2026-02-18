@@ -226,7 +226,14 @@ namespace Eco.Mods.TechTree
                          DisplayDiet(user, cached.Plan);
 
                      var remaining = TimeSpan.FromMinutes(CooldownMinutes) - (DateTime.Now - cached.GeneratedAt);
-                     user.Player.MsgLocStr($"Next diet update available in {remaining.Hours}h {remaining.Minutes}m.");
+                     if (remaining.TotalMinutes < 1)
+                     {
+                         user.Player.MsgLocStr($"Diet updated recently. Next update in {remaining.Seconds} seconds.");
+                     }
+                     else
+                     {
+                         user.Player.MsgLocStr($"Next diet update available in {remaining.Hours}h {remaining.Minutes}m.");
+                     }
                      return;
                 }
             }
@@ -711,7 +718,7 @@ namespace Eco.Mods.TechTree
                 var tasteBuds = tasteBudsProp.GetValue(stomach);
                 if (tasteBuds == null) { Log("TasteBuds Value Null"); failed = true; return validFoods; }
 
-                // Reflect over "FoodToTaste" dictionary
+                // Reflect over "FoodToTaste" dictionary (Eco.Core.Utils.ThreadSafeDictionary)
                 var foodToTasteProp = tasteBuds.GetType().GetProperty("FoodToTaste") ?? tasteBuds.GetType().GetField("FoodToTaste") as MemberInfo;
                 if (foodToTasteProp == null) { Log("FoodToTaste Member Null"); failed = true; return validFoods; }
 
@@ -723,22 +730,34 @@ namespace Eco.Mods.TechTree
 
                 Log($"FoodToTaste Dict Type: {foodToTasteDict.GetType().FullName}");
 
-                if (foodToTasteDict is System.Collections.IDictionary dict)
+                // Manual Enumeration via Reflection (handling ThreadSafeDictionary)
+                var enumerable = foodToTasteDict as System.Collections.IEnumerable;
+                if (enumerable != null)
                 {
-                     Log($"FoodToTaste Count: {dict.Count}");
-                     foreach (System.Collections.DictionaryEntry entry in dict)
+                     foreach (var entry in enumerable)
                      {
                          try
                          {
-                             object keyObj = entry.Key;
-                             object valueObj = entry.Value;
+                             // entry is likely KeyValuePair<Type, ItemTaste>
+                             // We need to reflect on entry to get Key and Value
+
+                             var entryType = entry.GetType();
+                             var keyProp = entryType.GetProperty("Key");
+                             var valueProp = entryType.GetProperty("Value");
+
+                             if (keyProp == null || valueProp == null)
+                             {
+                                 Log($"Entry {entryType.Name} does not have Key/Value properties.");
+                                 continue;
+                             }
+
+                             object keyObj = keyProp.GetValue(entry);
+                             object valueObj = valueProp.GetValue(entry);
 
                              if (keyObj == null) { Log("Entry Key is Null"); continue; }
                              if (valueObj == null) { Log("Entry Value is Null"); continue; }
 
-                             Log($"Entry Key Type: {keyObj.GetType().FullName}, Value Type: {valueObj.GetType().FullName}");
-
-                             // entry.Key is Type (Food Type), entry.Value is TasteData (or similar)
+                             // entry.Key is Type (Food Type), entry.Value is TasteData
                              var type = keyObj as Type;
 
                              if (type == null)
@@ -753,9 +772,8 @@ namespace Eco.Mods.TechTree
                              {
                                  var enumVal = prefProp.GetValue(valueObj);
                                  string prefName = enumVal.ToString();
-                                 Log($"Food: {type.Name}, Preference: {prefName}");
 
-                                 // Logic: Exclude bad foods, INCLUDE everything else (since it's in the list, it's tasted/discovered)
+                                 // Logic: Exclude bad foods, INCLUDE everything else
                                  if (!prefName.Equals("Horrible", StringComparison.OrdinalIgnoreCase) &&
                                      !prefName.Equals("Bad", StringComparison.OrdinalIgnoreCase) &&
                                      !prefName.Equals("Worst", StringComparison.OrdinalIgnoreCase) &&
@@ -777,7 +795,7 @@ namespace Eco.Mods.TechTree
                 }
                 else
                 {
-                    Log($"FoodToTaste is not IDictionary: {foodToTasteDict.GetType().FullName}");
+                    Log($"FoodToTaste is not IEnumerable: {foodToTasteDict.GetType().FullName}");
                     failed = true;
                 }
             }
