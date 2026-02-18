@@ -469,6 +469,7 @@ namespace Eco.Mods.TechTree
                 sb.AppendLine("Expected balance: Carbs: 0.0%, Protein: 0.0%, Fat: 0.0%, Vitamins: 0.0%");
             }
 
+            Log(sb.ToString()); // Log result to file
             user.Player.MsgLocStr(sb.ToString());
         }
 
@@ -480,6 +481,7 @@ namespace Eco.Mods.TechTree
             {
                 sb.AppendLine($"- {kvp.Key}: {kvp.Value * meals}");
             }
+             Log(sb.ToString()); // Log result to file
              user.Player.MsgLocStr(sb.ToString());
         }
 
@@ -719,6 +721,8 @@ namespace Eco.Mods.TechTree
 
                 if (foodToTasteDict == null) { Log("FoodToTaste Dictionary Null"); failed = true; return validFoods; }
 
+                Log($"FoodToTaste Dict Type: {foodToTasteDict.GetType().FullName}");
+
                 if (foodToTasteDict is System.Collections.IDictionary dict)
                 {
                      Log($"FoodToTaste Count: {dict.Count}");
@@ -726,27 +730,30 @@ namespace Eco.Mods.TechTree
                      {
                          try
                          {
+                             object keyObj = entry.Key;
+                             object valueObj = entry.Value;
+
+                             if (keyObj == null) { Log("Entry Key is Null"); continue; }
+                             if (valueObj == null) { Log("Entry Value is Null"); continue; }
+
+                             Log($"Entry Key Type: {keyObj.GetType().FullName}, Value Type: {valueObj.GetType().FullName}");
+
                              // entry.Key is Type (Food Type), entry.Value is TasteData (or similar)
-                             var type = entry.Key as Type;
-                             var tasteData = entry.Value;
+                             var type = keyObj as Type;
 
                              if (type == null)
                              {
-                                 Log($"Key is null or not Type: {entry.Key?.GetType().FullName}");
-                                 continue;
-                             }
-                             if (tasteData == null)
-                             {
-                                 Log($"Value is null for key {type.Name}");
+                                 Log($"Key cast to Type failed. Is it {keyObj.GetType().FullName}?");
                                  continue;
                              }
 
                              // Check "Preference" enum property on TasteData
-                             var prefProp = tasteData.GetType().GetProperty("Preference");
+                             var prefProp = valueObj.GetType().GetProperty("Preference");
                              if (prefProp != null)
                              {
-                                 var enumVal = prefProp.GetValue(tasteData);
-                                 string prefName = enumVal.ToString(); // e.g., "Horrible", "Bad", "Good"
+                                 var enumVal = prefProp.GetValue(valueObj);
+                                 string prefName = enumVal.ToString();
+                                 Log($"Food: {type.Name}, Preference: {prefName}");
 
                                  // Logic: Exclude bad foods, INCLUDE everything else (since it's in the list, it's tasted/discovered)
                                  if (!prefName.Equals("Horrible", StringComparison.OrdinalIgnoreCase) &&
@@ -759,12 +766,12 @@ namespace Eco.Mods.TechTree
                              }
                              else
                              {
-                                 Log($"Preference property not found on {tasteData.GetType().FullName}");
+                                 Log($"Preference property not found on {valueObj.GetType().FullName}");
                              }
                          }
                          catch (Exception innerEx)
                          {
-                             Log($"Error processing entry: {innerEx.Message}");
+                             Log($"Error processing loop entry: {innerEx.Message}");
                          }
                      }
                 }
