@@ -44,7 +44,7 @@ namespace Eco.Mods.TechTree
         private static Random rng = new Random();
         private static int CooldownMinutes = 1440;
         private static bool DebugMode = false;
-        private static bool StrictMode = false; // Default to False (Assume Discovered if API fails)
+        private static bool StrictMode = false;
 
         public void Initialize(TimedTask timer)
         {
@@ -138,7 +138,7 @@ namespace Eco.Mods.TechTree
                             if (DietCache.ContainsKey(user.Name))
                             {
                                 DietCache.Remove(user.Name);
-                                SaveData(); // SaveData locks internally, but we hold lock. Re-entrant lock is okay.
+                                SaveData();
                                 user.Player.MsgLocStr("Diet cache cleared.");
                             }
                             else
@@ -154,8 +154,6 @@ namespace Eco.Mods.TechTree
                     case "strict":
                         StrictMode = !StrictMode;
                         user.Player.MsgLocStr($"Strict Discovery Mode is now {(StrictMode ? "ON" : "OFF")}.");
-                        if (StrictMode) user.Player.MsgLocStr("Only explicitly discovered items will be shown.");
-                        else user.Player.MsgLocStr("All non-developer food items will be shown (Fallback enabled).");
                         break;
                     case "probe":
                         ProbeReflection(user);
@@ -233,7 +231,7 @@ namespace Eco.Mods.TechTree
                 lock(_lock)
                 {
                     DietCache[userId] = new DietResult { GeneratedAt = DateTime.Now, Plan = newPlan };
-                    SaveData(); // Re-entrant lock OK
+                    SaveData();
                 }
 
                 if (meals > 0)
@@ -243,7 +241,7 @@ namespace Eco.Mods.TechTree
             }
             else
             {
-                user.Player.MsgLocStr("Could not find a suitable diet. Try discovering more foods!");
+                user.Player.MsgLocStr("Could not find a suitable diet. Try discovering/tasting more foods!");
             }
         }
 
@@ -264,58 +262,67 @@ namespace Eco.Mods.TechTree
             } catch { }
 
             var availableFoods = new List<FoodItem>();
-            IEnumerable<FoodItem> allFoods = null;
-
-            try
-            {
-                 allFoods = Item.AllItemsIncludingHidden.OfType<FoodItem>();
-            }
-            catch
-            {
-                 try {
-                     var itemType = typeof(Item);
-                     var prop = itemType.GetProperty("AllItems", BindingFlags.Public | BindingFlags.Static);
-                     if (prop == null) prop = itemType.GetProperty("AllItemsIncludingHidden", BindingFlags.Public | BindingFlags.Static);
-
-                     if (prop != null)
-                     {
-                         var items = prop.GetValue(null) as IEnumerable<Item>;
-                         if (items != null) allFoods = items.OfType<FoodItem>();
-                     }
-                 } catch {}
-            }
-
-            if (allFoods == null || !allFoods.Any())
-            {
-                user.Player.MsgLocStr("Error: Could not retrieve food items from game registry.");
-                return null;
-            }
-
-            bool discoveryApiFailed = false;
             bool tasteApiFailed = false;
 
-            // Pre-fetch bad foods
-            HashSet<Type> badFoodTypes = GetBadFoodTypes(user, ref tasteApiFailed);
+            // Use TasteBuds.FoodToTaste as the primary source of truth for "Available Foods"
+            var discoveredAndTastedFoods = GetDiscoveredFoodTypesFromTasteBuds(user, ref tasteApiFailed);
 
-            foreach(var food in allFoods)
+            if (tasteApiFailed)
             {
-                if (IsHiddenOrBlacklisted(food)) continue;
+                 // Fallback to old discovery logic if TasteBuds fails completely
+                 user.Player.MsgLocStr("Warning: Taste API unavailable. Falling back to basic discovery check.");
+                 IEnumerable<FoodItem> allFoods = null;
+                 try
+                 {
+                      allFoods = Item.AllItemsIncludingHidden.OfType<FoodItem>();
+                 }
+                 catch
+                 {
+                      try {
+                          var itemType = typeof(Item);
+                          var prop = itemType.GetProperty("AllItems", BindingFlags.Public | BindingFlags.Static);
+                          if (prop == null) prop = itemType.GetProperty("AllItemsIncludingHidden", BindingFlags.Public | BindingFlags.Static);
 
-                if (!IsDiscovered(user, food, ref discoveryApiFailed)) continue;
+                          if (prop != null)
+                          {
+                              var items = prop.GetValue(null) as IEnumerable<Item>;
+                              if (items != null) allFoods = items.OfType<FoodItem>();
+                          }
+                      } catch {}
+                 }
 
-                // If taste API worked, exclude bad foods. If failed, allow all.
-                if (!tasteApiFailed && badFoodTypes.Contains(food.Type)) continue;
-
-                if (food.Calories <= 0) continue;
-                if (food.Calories > stomachSize) continue;
-
-                availableFoods.Add(food);
+                 if (allFoods != null)
+                 {
+                     bool discFailed = false;
+                     foreach(var food in allFoods)
+                     {
+                         if (IsHiddenOrBlacklisted(food)) continue;
+                         if (!IsDiscovered(user, food, ref discFailed)) continue;
+                         if (food.Calories <= 0) continue;
+                         if (food.Calories > stomachSize) continue;
+                         availableFoods.Add(food);
+                     }
+                 }
             }
-
-            if (discoveryApiFailed && !StrictMode)
-                user.Player.MsgLocStr("Warning: Discovery API unreachable. Showing all foods (excluding dev items). Use '/diet strict' to enforce strict discovery.");
-
-            if (tasteApiFailed) user.Player.MsgLocStr("Warning: Taste API failed. Assuming no bad foods.");
+            else
+            {
+                // Strict TasteBuds Source Logic
+                foreach(var type in discoveredAndTastedFoods)
+                {
+                    try
+                    {
+                        var item = Item.Get(type);
+                        if (item is FoodItem food)
+                        {
+                            if (IsHiddenOrBlacklisted(food)) continue;
+                            if (food.Calories <= 0) continue;
+                            if (food.Calories > stomachSize) continue;
+                            availableFoods.Add(food);
+                        }
+                    }
+                    catch { }
+                }
+            }
 
             if (availableFoods.Count == 0) return null;
 
@@ -660,27 +667,27 @@ namespace Eco.Mods.TechTree
             }
         }
 
-        private static HashSet<Type> GetBadFoodTypes(User user, ref bool failed)
+        private static List<Type> GetDiscoveredFoodTypesFromTasteBuds(User user, ref bool failed)
         {
-            var badFoods = new HashSet<Type>();
+            var validFoods = new List<Type>();
 
             try
             {
                 var stomachProp = user.GetType().GetProperty("Stomach");
-                if (stomachProp == null) { failed = true; return badFoods; }
+                if (stomachProp == null) { failed = true; return validFoods; }
 
                 var stomach = stomachProp.GetValue(user);
-                if (stomach == null) { failed = true; return badFoods; }
+                if (stomach == null) { failed = true; return validFoods; }
 
                 var tasteBudsProp = stomach.GetType().GetProperty("TasteBuds");
-                if (tasteBudsProp == null) { failed = true; return badFoods; }
+                if (tasteBudsProp == null) { failed = true; return validFoods; }
 
                 var tasteBuds = tasteBudsProp.GetValue(stomach);
-                if (tasteBuds == null) { failed = true; return badFoods; }
+                if (tasteBuds == null) { failed = true; return validFoods; }
 
                 // Reflect over "FoodToTaste" dictionary
                 var foodToTasteProp = tasteBuds.GetType().GetProperty("FoodToTaste") ?? tasteBuds.GetType().GetField("FoodToTaste") as MemberInfo;
-                if (foodToTasteProp == null) { failed = true; return badFoods; }
+                if (foodToTasteProp == null) { failed = true; return validFoods; }
 
                 object foodToTasteDict = null;
                 if (foodToTasteProp is PropertyInfo pInfo) foodToTasteDict = pInfo.GetValue(tasteBuds);
@@ -701,15 +708,15 @@ namespace Eco.Mods.TechTree
                              if (prefProp != null)
                              {
                                  var enumVal = prefProp.GetValue(tasteData);
-                                 string prefName = enumVal.ToString(); // e.g., "Horrible", "Bad"
+                                 string prefName = enumVal.ToString(); // e.g., "Horrible", "Bad", "Good"
 
-                                 // Add logic to exclude bad foods
-                                 if (prefName.Equals("Horrible", StringComparison.OrdinalIgnoreCase) ||
-                                     prefName.Equals("Bad", StringComparison.OrdinalIgnoreCase) ||
-                                     prefName.Equals("Worst", StringComparison.OrdinalIgnoreCase) ||
-                                     prefName.Equals("TotalDisgust", StringComparison.OrdinalIgnoreCase))
+                                 // Logic: Exclude bad foods, INCLUDE everything else (since it's in the list, it's tasted/discovered)
+                                 if (!prefName.Equals("Horrible", StringComparison.OrdinalIgnoreCase) &&
+                                     !prefName.Equals("Bad", StringComparison.OrdinalIgnoreCase) &&
+                                     !prefName.Equals("Worst", StringComparison.OrdinalIgnoreCase) &&
+                                     !prefName.Equals("TotalDisgust", StringComparison.OrdinalIgnoreCase))
                                  {
-                                     badFoods.Add(type);
+                                     validFoods.Add(type);
                                  }
                              }
                          }
@@ -722,7 +729,7 @@ namespace Eco.Mods.TechTree
                 if (DebugMode) user.Player.MsgLocStr($"Debug: Taste API Error: {ex.Message}");
             }
 
-            return badFoods;
+            return validFoods;
         }
     }
 }
