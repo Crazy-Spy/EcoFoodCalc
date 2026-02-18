@@ -207,7 +207,8 @@ namespace Eco.Mods.TechTree
         private static void ShowTasteList(User user)
         {
             bool failed = false;
-            var foods = GetDiscoveredFoodTypesFromTasteBuds(user, ref failed);
+            // Key: Preference (String), Value: List of Food Names
+            var groupedFoods = GetGroupedFoodTypesFromTasteBuds(user, ref failed);
 
             if (failed)
             {
@@ -216,18 +217,46 @@ namespace Eco.Mods.TechTree
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("<b>Your Known Foods (Good+):</b>");
-            foreach(var type in foods)
+
+            // Define Order
+            var order = new[] { "Favorite", "Delicious", "Good", "Ok", "Bad", "Horrible", "Worst" };
+            int totalCount = 0;
+
+            // Handle Favorite and Worst explicitly at top if needed, but grouping is generic
+            // Per request: Favorite, Worst, then categories
+
+            string GetGroup(string key) => groupedFoods.ContainsKey(key) ? string.Join(", ", groupedFoods[key]) : "Unknown"; // Join comma separated? Or list? User asked for list.
+
+            // Favorite
+            sb.AppendLine($"<b>Favorite:</b> { (groupedFoods.ContainsKey("Favorite") && groupedFoods["Favorite"].Any() ? groupedFoods["Favorite"].First() : "Unknown") }");
+            sb.AppendLine($"<b>Worst:</b> { (groupedFoods.ContainsKey("Worst") && groupedFoods["Worst"].Any() ? groupedFoods["Worst"].First() : "Unknown") }");
+
+            foreach(var category in order)
             {
-                try
+                if (category == "Favorite" || category == "Worst") continue; // Already handled? Or list all?
+                // Request says: "--- Delicious --- <list>"
+
+                if (groupedFoods.ContainsKey(category) && groupedFoods[category].Count > 0)
                 {
-                    var item = Item.Get(type);
-                    if (item != null)
-                        sb.AppendLine($"- {item.DisplayName.ToString()}");
+                    sb.AppendLine($"--- <b>{category}</b> ---");
+                    foreach(var food in groupedFoods[category])
+                    {
+                        sb.AppendLine($"- {food}");
+                        totalCount++;
+                    }
                 }
-                catch {}
             }
-            user.Player.MsgLocStr(sb.ToString());
+
+            // Count Favorite and Worst too if they exist in dictionary but weren't printed in loop
+            if (groupedFoods.ContainsKey("Favorite")) totalCount += groupedFoods["Favorite"].Count;
+            if (groupedFoods.ContainsKey("Worst")) totalCount += groupedFoods["Worst"].Count;
+
+            sb.AppendLine();
+            sb.AppendLine($"Total of known foods: {totalCount}");
+
+            string result = sb.ToString();
+            Log(result);
+            user.Player.MsgLocStr(result);
         }
 
         private static void HandleDietRequest(User user, int meals)
@@ -318,11 +347,41 @@ namespace Eco.Mods.TechTree
             var availableFoods = new List<FoodItem>();
             bool tasteApiFailed = false;
 
-            var discoveredAndTastedFoods = GetDiscoveredFoodTypesFromTasteBuds(user, ref tasteApiFailed);
-            Log($"Taste API Failed: {tasteApiFailed}. Found {discoveredAndTastedFoods.Count} foods via taste buds.");
+            // Use the grouping helper but flatten for calculation
+            var groupedFoods = GetGroupedFoodTypesFromTasteBuds(user, ref tasteApiFailed);
+
+            if (!tasteApiFailed)
+            {
+                // Whitelist categories
+                var allowed = new[] { "Favorite", "Delicious", "Good", "Ok" };
+                int count = 0;
+
+                foreach(var kvp in groupedFoods)
+                {
+                    if (allowed.Contains(kvp.Key)) // Check ignore case? Helper normalizes keys?
+                    {
+                        foreach(var foodName in kvp.Value)
+                        {
+                            // We need the Item Object, not just name.
+                            // The helper currently returns Strings.
+                            // Optimization: Refactor helper to return Types or Items?
+                            // For now, let's look up by name or keep a Type mapping.
+                            // Better: Have helper return Dictionary<string, List<Type>> or FoodItem.
+                        }
+                    }
+                }
+            }
+
+            // RE-IMPLEMENTING using the robust "GetDiscoveredFoodTypes" style logic but with grouping awareness
+            // Actually, simply calling GetDiscoveredFoodTypesFromTasteBuds is cleaner for the optimizer
+            // But we need to ensure it matches the /diet taste output.
+
+            var validFoodTypes = GetDiscoveredFoodTypesFromTasteBuds(user, ref tasteApiFailed);
+            Log($"Taste API Failed: {tasteApiFailed}. Found {validFoodTypes.Count} foods via taste buds.");
 
             if (tasteApiFailed)
             {
+                 // Fallback to old discovery logic if TasteBuds fails completely
                  user.Player.MsgLocStr("Warning: Taste API unavailable. Falling back to basic discovery check.");
                  IEnumerable<FoodItem> allFoods = null;
                  try
@@ -359,7 +418,7 @@ namespace Eco.Mods.TechTree
             }
             else
             {
-                foreach(var type in discoveredAndTastedFoods)
+                foreach(var type in validFoodTypes)
                 {
                     try
                     {
@@ -502,7 +561,7 @@ namespace Eco.Mods.TechTree
                 sb.AppendLine("Expected balance: Carbs: 0.0%, Protein: 0.0%, Fat: 0.0%, Vitamins: 0.0%");
             }
 
-            Log(sb.ToString()); // Log result to file
+            Log(sb.ToString());
             user.Player.MsgLocStr(sb.ToString());
         }
 
@@ -514,7 +573,7 @@ namespace Eco.Mods.TechTree
             {
                 sb.AppendLine($"- {kvp.Key}: {kvp.Value * meals}");
             }
-             Log(sb.ToString()); // Log result to file
+             Log(sb.ToString());
              user.Player.MsgLocStr(sb.ToString());
         }
 
@@ -599,7 +658,6 @@ namespace Eco.Mods.TechTree
 
         private static bool IsDiscovered(User user, FoodItem food, ref bool failed)
         {
-            // 1. Check Inventory (Possession)
             try
             {
                 var invProp = user.GetType().GetProperty("Inventory");
@@ -616,7 +674,6 @@ namespace Eco.Mods.TechTree
                             {
                                 foreach(var item in items)
                                 {
-                                    // Handle ItemStack vs Item
                                     var itemProp = item.GetType().GetProperty("Item");
                                     var obj = itemProp != null ? itemProp.GetValue(item) : item;
 
@@ -632,7 +689,6 @@ namespace Eco.Mods.TechTree
                 }
             } catch {}
 
-            // 2. Check Stomach Contents (Recent History) - Check Properties AND Fields
             try
             {
                  var stomach = user.GetType().GetProperty("Stomach")?.GetValue(user);
@@ -665,7 +721,7 @@ namespace Eco.Mods.TechTree
             }
             catch { }
 
-            if (failed && !StrictMode) return true; // Fail safe: Assume discovered if API broken (unless StrictMode)
+            if (failed && !StrictMode) return true;
 
             try
             {
@@ -704,59 +760,63 @@ namespace Eco.Mods.TechTree
                     }
                 }
 
-                // If we reach here, we couldn't access DiscoveryManager.
                 failed = true;
-                if (StrictMode)
-                {
-                    if (DebugMode) user.Player.MsgLocStr("Debug: DiscoveryManager not found. StrictMode=ON -> Defaulting to FALSE.");
-                    return false;
-                }
-                else
-                {
-                    if (DebugMode) user.Player.MsgLocStr("Debug: DiscoveryManager not found. StrictMode=OFF -> Defaulting to TRUE.");
-                    return true;
-                }
+                if (StrictMode) return false;
+                else return true;
             }
             catch (Exception ex)
             {
-                if (DebugMode) user.Player.MsgLocStr($"Debug: Discovery check error: {ex.Message}");
                 failed = true;
-                return !StrictMode; // Default true if not strict
+                return !StrictMode;
             }
         }
 
         private static List<Type> GetDiscoveredFoodTypesFromTasteBuds(User user, ref bool failed)
         {
             var validFoods = new List<Type>();
-            Log("Entering GetDiscoveredFoodTypesFromTasteBuds");
+            try
+            {
+                var dict = GetGroupedFoodTypesFromTasteBuds(user, ref failed);
+                if (failed) return validFoods;
+
+                // Flatten allowed groups
+                var allowed = new[] { "Favorite", "Delicious", "Good", "Ok" };
+                foreach(var kvp in dict)
+                {
+                    // Check if key is in allowed list (ignoring case)
+                    if (allowed.Any(a => a.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        // We need Types here, but the grouped helper returns Strings (Food Names).
+                        // WE NEED TO DUPLICATE LOGIC OR REFACTOR.
+                        // To avoid complex re-architecture now, I will essentially copy the iteration logic
+                        // but return Types instead of Strings, filtered by allowed prefs.
+                        // Actually, let's just use the iteration below which does exactly this.
+                    }
+                }
+            } catch {}
+
+            // Re-implement iteration to return TYPES directly
 
             try
             {
                 var stomachProp = user.GetType().GetProperty("Stomach");
-                if (stomachProp == null) { Log("Stomach Property Null"); failed = true; return validFoods; }
-
+                if (stomachProp == null) { failed = true; return validFoods; }
                 var stomach = stomachProp.GetValue(user);
-                if (stomach == null) { Log("Stomach Value Null"); failed = true; return validFoods; }
-
+                if (stomach == null) { failed = true; return validFoods; }
                 var tasteBudsProp = stomach.GetType().GetProperty("TasteBuds");
-                if (tasteBudsProp == null) { Log("TasteBuds Property Null"); failed = true; return validFoods; }
-
+                if (tasteBudsProp == null) { failed = true; return validFoods; }
                 var tasteBuds = tasteBudsProp.GetValue(stomach);
-                if (tasteBuds == null) { Log("TasteBuds Value Null"); failed = true; return validFoods; }
+                if (tasteBuds == null) { failed = true; return validFoods; }
 
-                // Reflect over "FoodToTaste" dictionary (Eco.Core.Utils.ThreadSafeDictionary)
                 var foodToTasteProp = tasteBuds.GetType().GetProperty("FoodToTaste") ?? tasteBuds.GetType().GetField("FoodToTaste") as MemberInfo;
-                if (foodToTasteProp == null) { Log("FoodToTaste Member Null"); failed = true; return validFoods; }
+                if (foodToTasteProp == null) { failed = true; return validFoods; }
 
                 object foodToTasteDict = null;
                 if (foodToTasteProp is PropertyInfo pInfo) foodToTasteDict = pInfo.GetValue(tasteBuds);
                 else if (foodToTasteProp is FieldInfo fInfo) foodToTasteDict = fInfo.GetValue(tasteBuds);
 
-                if (foodToTasteDict == null) { Log("FoodToTaste Dictionary Null"); failed = true; return validFoods; }
+                if (foodToTasteDict == null) { failed = true; return validFoods; }
 
-                Log($"FoodToTaste Dict Type: {foodToTasteDict.GetType().FullName}");
-
-                // Manual Enumeration via Reflection (handling ThreadSafeDictionary)
                 var enumerable = foodToTasteDict as System.Collections.IEnumerable;
                 if (enumerable != null)
                 {
@@ -764,36 +824,20 @@ namespace Eco.Mods.TechTree
                      {
                          try
                          {
-                             // entry is likely KeyValuePair<Type, ItemTaste>
-                             // We need to reflect on entry to get Key and Value
-
                              var entryType = entry.GetType();
                              var keyProp = entryType.GetProperty("Key");
                              var valueProp = entryType.GetProperty("Value");
 
-                             if (keyProp == null || valueProp == null)
-                             {
-                                 Log($"Entry {entryType.Name} does not have Key/Value properties.");
-                                 continue;
-                             }
+                             if (keyProp == null || valueProp == null) continue;
 
                              object keyObj = keyProp.GetValue(entry);
                              object valueObj = valueProp.GetValue(entry);
 
-                             if (keyObj == null) { Log("Entry Key is Null"); continue; }
-                             if (valueObj == null) { Log("Entry Value is Null"); continue; }
+                             if (keyObj == null || valueObj == null) continue;
 
-                             // entry.Key is Type (Food Type), entry.Value is TasteData
                              var type = keyObj as Type;
+                             if (type == null) continue;
 
-                             if (type == null)
-                             {
-                                 Log($"Key cast to Type failed. Is it {keyObj.GetType().FullName}?");
-                                 continue;
-                             }
-
-                             // Check "Preference" property OR field on TasteData
-                             // Log showed "Preference property not found", so likely a Field.
                              object enumVal = null;
                              var prefProp = valueObj.GetType().GetProperty("Preference");
                              if (prefProp != null) enumVal = prefProp.GetValue(valueObj);
@@ -807,40 +851,106 @@ namespace Eco.Mods.TechTree
                              {
                                  string prefName = enumVal.ToString();
 
-                                 // Logic: Exclude bad foods, INCLUDE everything else
-                                 if (!prefName.Equals("Horrible", StringComparison.OrdinalIgnoreCase) &&
-                                     !prefName.Equals("Bad", StringComparison.OrdinalIgnoreCase) &&
-                                     !prefName.Equals("Worst", StringComparison.OrdinalIgnoreCase) &&
-                                     !prefName.Equals("TotalDisgust", StringComparison.OrdinalIgnoreCase))
+                                 // Strict Whitelist
+                                 if (prefName.Equals("Favorite", StringComparison.OrdinalIgnoreCase) ||
+                                     prefName.Equals("Delicious", StringComparison.OrdinalIgnoreCase) ||
+                                     prefName.Equals("Good", StringComparison.OrdinalIgnoreCase) ||
+                                     prefName.Equals("Ok", StringComparison.OrdinalIgnoreCase))
                                  {
                                      validFoods.Add(type);
                                  }
                              }
-                             else
-                             {
-                                 Log($"Preference property/field not found on {valueObj.GetType().FullName}");
-                             }
                          }
-                         catch (Exception innerEx)
-                         {
-                             Log($"Error processing loop entry: {innerEx.Message}");
-                         }
+                         catch { }
                      }
                 }
-                else
+                else { failed = true; }
+            }
+            catch { failed = true; }
+
+            return validFoods;
+        }
+
+        private static Dictionary<string, List<string>> GetGroupedFoodTypesFromTasteBuds(User user, ref bool failed)
+        {
+            var grouped = new Dictionary<string, List<string>>();
+
+            try
+            {
+                var stomachProp = user.GetType().GetProperty("Stomach");
+                if (stomachProp == null) { failed = true; return grouped; }
+                var stomach = stomachProp.GetValue(user);
+                if (stomach == null) { failed = true; return grouped; }
+                var tasteBudsProp = stomach.GetType().GetProperty("TasteBuds");
+                if (tasteBudsProp == null) { failed = true; return grouped; }
+                var tasteBuds = tasteBudsProp.GetValue(stomach);
+                if (tasteBuds == null) { failed = true; return grouped; }
+
+                var foodToTasteProp = tasteBuds.GetType().GetProperty("FoodToTaste") ?? tasteBuds.GetType().GetField("FoodToTaste") as MemberInfo;
+                if (foodToTasteProp == null) { failed = true; return grouped; }
+
+                object foodToTasteDict = null;
+                if (foodToTasteProp is PropertyInfo pInfo) foodToTasteDict = pInfo.GetValue(tasteBuds);
+                else if (foodToTasteProp is FieldInfo fInfo) foodToTasteDict = fInfo.GetValue(tasteBuds);
+
+                if (foodToTasteDict == null) { failed = true; return grouped; }
+
+                var enumerable = foodToTasteDict as System.Collections.IEnumerable;
+                if (enumerable != null)
                 {
-                    Log($"FoodToTaste is not IEnumerable: {foodToTasteDict.GetType().FullName}");
-                    failed = true;
+                     foreach (var entry in enumerable)
+                     {
+                         try
+                         {
+                             var entryType = entry.GetType();
+                             var keyProp = entryType.GetProperty("Key");
+                             var valueProp = entryType.GetProperty("Value");
+
+                             if (keyProp == null || valueProp == null) continue;
+
+                             object keyObj = keyProp.GetValue(entry);
+                             object valueObj = valueProp.GetValue(entry);
+
+                             if (keyObj == null || valueObj == null) continue;
+
+                             var type = keyObj as Type;
+                             if (type == null) continue;
+
+                             // Get Food Name
+                             string foodName = "Unknown";
+                             try {
+                                 var item = Item.Get(type);
+                                 if (item != null) foodName = item.DisplayName.ToString();
+                             } catch {}
+
+                             object enumVal = null;
+                             var prefProp = valueObj.GetType().GetProperty("Preference");
+                             if (prefProp != null) enumVal = prefProp.GetValue(valueObj);
+                             else
+                             {
+                                 var prefField = valueObj.GetType().GetField("Preference");
+                                 if (prefField != null) enumVal = prefField.GetValue(valueObj);
+                             }
+
+                             if (enumVal != null)
+                             {
+                                 string prefName = enumVal.ToString();
+                                 if (!grouped.ContainsKey(prefName)) grouped[prefName] = new List<string>();
+                                 grouped[prefName].Add(foodName);
+                             }
+                         }
+                         catch { }
+                     }
                 }
+                else { failed = true; }
             }
             catch (Exception ex)
             {
                 failed = true;
-                if (DebugMode) user.Player.MsgLocStr($"Debug: Taste API Error: {ex.Message}");
-                Log($"Debug: Taste API Error Full: {ex}");
+                Log($"Grouped Taste Error: {ex}");
             }
 
-            return validFoods;
+            return grouped;
         }
     }
 }
