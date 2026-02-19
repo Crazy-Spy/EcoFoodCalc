@@ -53,10 +53,19 @@ function preprocessImage(file) {
                 const data = imageData.data;
 
                 // Invert Colors (Eco dark mode -> light mode for Tesseract)
-                // Also convert to grayscale to reduce noise
+                // Also convert to grayscale and increase contrast
+                const contrast = 1.5; // enhance contrast
+                const intercept = 128 * (1 - contrast);
+
                 for (let i = 0; i < data.length; i += 4) {
                     const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                    const inverted = 255 - avg;
+                    let inverted = 255 - avg;
+
+                    // Apply contrast
+                    inverted = (inverted * contrast) + intercept;
+                    // Clamp
+                    inverted = Math.max(0, Math.min(255, inverted));
+
                     data[i] = inverted;
                     data[i + 1] = inverted;
                     data[i + 2] = inverted;
@@ -120,7 +129,8 @@ export function parseOCRText(text) {
 
         if (currentStatus) {
             // Clean up food name (remove icons/bullets at start)
-            const cleanName = line.replace(/^[^a-zA-Z0-9]+/, '').trim();
+            // Food names in Eco generally don't start with numbers, so we strip anything that isn't a letter.
+            const cleanName = line.replace(/^[^a-zA-Z]+/, '').trim();
 
             if (cleanName.length > 2) {
                 results.push({

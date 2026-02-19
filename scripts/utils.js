@@ -36,7 +36,7 @@ export function levenshteinDistance(a, b) {
     return matrix[b.length][a.length];
 }
 
-export function findBestMatch(target, candidates, threshold = 3) {
+export function findBestMatch(target, candidates, threshold = 10) {
     if (!target) return null;
 
     let bestMatch = null;
