@@ -4,11 +4,20 @@ import { updateSessionStatus } from "./view.js";
 export async function processImage(file) {
     if (!file) return null;
 
-    updateSessionStatus("Initializing OCR...");
+    updateSessionStatus("Preprocessing image...");
 
     try {
+        let imageToProcess = file;
+        try {
+             imageToProcess = await preprocessImage(file);
+        } catch (e) {
+             console.error("Preprocessing failed, using original.", e);
+        }
+
+        updateSessionStatus("Initializing OCR...");
+
         const { data: { text } } = await Tesseract.recognize(
-            file,
+            imageToProcess,
             'eng',
             {
                 logger: m => {
@@ -26,6 +35,42 @@ export async function processImage(file) {
         updateSessionStatus("Error reading image.");
         throw error;
     }
+}
+
+function preprocessImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+
+                // Invert Colors (Eco dark mode -> light mode for Tesseract)
+                // Also convert to grayscale to reduce noise
+                for (let i = 0; i < data.length; i += 4) {
+                    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    const inverted = 255 - avg;
+                    data[i] = inverted;
+                    data[i + 1] = inverted;
+                    data[i + 2] = inverted;
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+            };
+            img.onerror = reject;
+            img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
 
 export function parseOCRText(text) {
@@ -64,19 +109,19 @@ export function parseOCRText(text) {
             continue;
         }
 
-        // Check for Section Header
-        const headerMatch = line.match(/[-—]+ *(\w+) *[-—]+/);
-        if (headerMatch) {
-            const statusText = headerMatch[1];
-            if (statusMap[statusText]) {
-                currentStatus = statusMap[statusText];
-                continue;
-            }
+        // Check for Section Header (Flexible matching)
+        // Clean line of non-alpha characters from start and end
+        const cleanLine = line.replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '').trim();
+
+        if (statusMap[cleanLine]) {
+            currentStatus = statusMap[cleanLine];
+            continue;
         }
 
         if (currentStatus) {
-            // Clean up food name (remove icons/bullets)
+            // Clean up food name (remove icons/bullets at start)
             const cleanName = line.replace(/^[^a-zA-Z0-9]+/, '').trim();
+
             if (cleanName.length > 2) {
                 results.push({
                     foodName: cleanName,

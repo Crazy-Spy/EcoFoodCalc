@@ -60,6 +60,7 @@ import {
 } from "./view.js";
 
 import { processImage, parseOCRText } from "./ocr.js";
+import { findBestMatch } from "./utils.js";
 
 // --- Controller Functions ---
 
@@ -83,6 +84,7 @@ export async function handleScreenshotUpload(event) {
     }
 
     const foodData = getFoodData();
+    const foodNames = foodData.map((f) => f.Food_Name);
     const userPreferences = getUserPreferences();
     let updatedCount = 0;
     let unknownCount = 0;
@@ -95,13 +97,11 @@ export async function handleScreenshotUpload(event) {
     localStorage.setItem(SORT_ORDER_KEY, "desc");
 
     results.forEach((item) => {
-      // Find food in database (case-insensitive search for robustness)
-      const dbFood = foodData.find(
-        (f) => f.Food_Name.toLowerCase() === item.foodName.toLowerCase()
-      );
+      // Fuzzy match
+      const bestMatch = findBestMatch(item.foodName, foodNames);
 
-      if (dbFood) {
-        const foodName = dbFood.Food_Name;
+      if (bestMatch) {
+        const foodName = bestMatch.match;
 
         // Handle Favorite/Worst tags
         if (item.isFavorite) {
