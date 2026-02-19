@@ -103,7 +103,7 @@ export function parseOCRText(text) {
         const favMatch = line.match(/^Favorite:\s*(.+)/i);
         if (favMatch) {
             const food = favMatch[1].trim();
-            if (food && food.toLowerCase() !== 'unknown') {
+            if (food && food.toLowerCase() !== 'unknown' && !/seed|spore/i.test(food)) {
                  results.push({ foodName: food, isFavorite: true });
             }
             continue;
@@ -112,7 +112,7 @@ export function parseOCRText(text) {
         const worstMatch = line.match(/^Worst:\s*(.+)/i);
         if (worstMatch) {
             const food = worstMatch[1].trim();
-            if (food && food.toLowerCase() !== 'unknown') {
+            if (food && food.toLowerCase() !== 'unknown' && !/seed|spore/i.test(food)) {
                  results.push({ foodName: food, isWorst: true });
             }
             continue;
@@ -131,6 +131,11 @@ export function parseOCRText(text) {
             // Clean up food name (remove icons/bullets at start)
             // Food names in Eco generally don't start with numbers, so we strip anything that isn't a letter.
             const cleanName = line.replace(/^[^a-zA-Z]+/, '').trim();
+
+            // Ignore Seeds and Spores as requested
+            if (/seed|spore/i.test(cleanName)) {
+                continue;
+            }
 
             if (cleanName.length > 2) {
                 results.push({
