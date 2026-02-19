@@ -8,7 +8,8 @@ import {
     updateFoodStatus,
     removeItemFromPreferences,
     addFoodToEvaluatedList,
-    handleFilterChange
+    handleFilterChange,
+    handleScreenshotUpload
 } from './controller.js';
 
 import {
@@ -33,5 +34,6 @@ window.renderEvaluatedTableComponent = handleFilterChange;
 window.sortTable = sortTable;
 window.updateFoodStatus = updateFoodStatus;
 window.removeItemFromPreferences = removeItemFromPreferences;
+window.handleScreenshotUpload = handleScreenshotUpload;
 
 document.addEventListener("DOMContentLoaded", initApp);

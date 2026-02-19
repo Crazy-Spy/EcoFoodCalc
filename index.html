@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Eco FoodCalc - Diet Optimizer</title>
         <link rel="stylesheet" type="text/css" href="styles/styles.css" />
+        <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
         <script type="module" src="scripts/main.js"></script>
         <link
             rel="stylesheet"
@@ -59,6 +60,19 @@
                         class="import-button button"
                     >
                         <i class="ph ph-download-simple icon"></i>Import Data
+                    </button>
+                    <input
+                        type="file"
+                        id="screenshot-input"
+                        accept="image/*"
+                        style="display: none"
+                        onchange="handleScreenshotUpload(event)"
+                    />
+                    <button
+                        onclick="document.getElementById('screenshot-input').click()"
+                        class="screenshot-button button"
+                    >
+                        <i class="ph ph-camera icon"></i>Import Screenshot
                     </button>
                 </div>
                 <p>Current Session Status: <span id="session-status"></span></p>

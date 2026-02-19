@@ -59,7 +59,98 @@ import {
   updateLastCommitDate,
 } from "./view.js";
 
+import { processImage, parseOCRText } from "./ocr.js";
+
 // --- Controller Functions ---
+
+export async function handleScreenshotUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const text = await processImage(file);
+    if (!text) {
+      alert("Could not read text from image.");
+      updateSessionStatus("Failed to read image.");
+      return;
+    }
+
+    const results = parseOCRText(text);
+    if (results.length === 0) {
+      alert("No recognizable food preferences found in the image.");
+      updateSessionStatus("No preferences found.");
+      return;
+    }
+
+    const foodData = getFoodData();
+    const userPreferences = getUserPreferences();
+    let updatedCount = 0;
+    let unknownCount = 0;
+    let unknownFoods = [];
+
+    // Reset sort to show latest updates
+    setCurrentSortColumn("ORDER_PRIORITY");
+    setCurrentSortOrder("desc");
+    localStorage.setItem(SORT_COLUMN_KEY, "ORDER_PRIORITY");
+    localStorage.setItem(SORT_ORDER_KEY, "desc");
+
+    results.forEach((item) => {
+      // Find food in database (case-insensitive search for robustness)
+      const dbFood = foodData.find(
+        (f) => f.Food_Name.toLowerCase() === item.foodName.toLowerCase()
+      );
+
+      if (dbFood) {
+        const foodName = dbFood.Food_Name;
+
+        // Handle Favorite/Worst tags
+        if (item.isFavorite) {
+          setFavoriteFood(foodName);
+          saveGlobalTag(FAVORITE_KEY, foodName);
+        } else if (item.isWorst) {
+          setWorstFood(foodName);
+          saveGlobalTag(WORST_KEY, foodName);
+        } else {
+          // Update status if different
+          if (userPreferences[foodName].status !== item.status) {
+            userPreferences[foodName].status = item.status;
+            userPreferences[foodName].timestamp = Date.now();
+            updatedCount++;
+          }
+        }
+      } else {
+        unknownCount++;
+        if (!unknownFoods.includes(item.foodName)) {
+            unknownFoods.push(item.foodName);
+        }
+      }
+    });
+
+    if (updatedCount > 0) {
+      setUserPreferences(userPreferences);
+      saveUserPreferences();
+      refreshUI();
+    }
+
+    let message = `Successfully updated ${updatedCount} food preferences!`;
+    if (unknownCount > 0) {
+      message += `\n\n${unknownCount} foods from the screenshot were not found in the database (or name mismatch):\n- ${unknownFoods
+        .slice(0, 5)
+        .join("\n- ")}`;
+      if (unknownFoods.length > 5)
+        message += `\n...and ${unknownFoods.length - 5} more.`;
+    }
+
+    alert(message);
+    updateSessionStatus("Screenshot processed successfully.");
+  } catch (error) {
+    console.error(error);
+    alert("Error processing screenshot.");
+    updateSessionStatus("Error processing screenshot.");
+  } finally {
+    event.target.value = "";
+  }
+}
 
 export function refreshUI() {
   const foodData = getFoodData();
