@@ -112,7 +112,10 @@ export async function handleScreenshotUpload(event) {
           saveGlobalTag(WORST_KEY, foodName);
         } else {
           // Update status if different
-          if (userPreferences[foodName].status !== item.status) {
+          if (!userPreferences[foodName] || userPreferences[foodName].status !== item.status) {
+            if (!userPreferences[foodName]) {
+                 userPreferences[foodName] = {};
+            }
             userPreferences[foodName].status = item.status;
             userPreferences[foodName].timestamp = Date.now();
             updatedCount++;

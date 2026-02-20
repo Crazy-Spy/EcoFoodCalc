@@ -127,13 +127,34 @@ export function parseOCRText(text) {
             continue;
         }
 
+        // Catch potential header artifacts like "we Horrible" which might be "--- Horrible ---" misread
+        // We check if the line *contains* a status keyword but wasn't caught by the strict header check above
+        // and if it looks like it might be a header line (e.g., short, has dashes or special chars originally).
+        // For simplicity, if a line contains a status keyword and is short, we treat it as a header or ignore it to prevent it being added as food.
+        // We use word boundaries to avoid matching substrings like "Ok" in "Smoked Fish" or "Cooked Meat".
+        const potentialStatus = Object.keys(statusMap).find(s => {
+             const regex = new RegExp(`\\b${s}\\b`);
+             return regex.test(line);
+        });
+
+        if (potentialStatus) {
+             // If the line is just the status with some noise, switch status and continue
+             // e.g. "we Horrible" -> "Horrible"
+             // But be careful not to match "Horrible Corn" if that was a thing (it's not).
+             // Given the context of the screenshot, these lines are likely headers.
+             if (line.length < 20) { // Headers are usually short "--- Status ---"
+                  currentStatus = statusMap[potentialStatus];
+                  continue;
+             }
+        }
+
         if (currentStatus) {
             // Clean up food name (remove icons/bullets at start)
             // Food names in Eco generally don't start with numbers, so we strip anything that isn't a letter.
             const cleanName = line.replace(/^[^a-zA-Z]+/, '').trim();
 
-            // Ignore Seeds and Spores as requested
-            if (/seed|spore/i.test(cleanName)) {
+            // Ignore Seeds, Spores, and Trillium Flower as requested
+            if (/seed|spore|Trillium Flower/i.test(cleanName)) {
                 continue;
             }
 
