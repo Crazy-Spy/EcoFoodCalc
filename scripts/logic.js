@@ -77,9 +77,26 @@ export function getSuggestedDiets() {
     );
     const foodsToDrawFrom = [];
 
+    // Prefer non-raw foods when selecting available types
+    // Split foods into raw and cooked
+    const rawFoods = availableFoods.filter(f => f.Food_Name.toLowerCase().includes("raw"));
+    const cookedFoods = availableFoods.filter(f => !f.Food_Name.toLowerCase().includes("raw"));
+
+    // Bias selection: Try to pick from cooked foods first.
+    // Only pick raw foods if we need more variety than cooked foods can offer,
+    // or with a low probability to allow for optimal solutions where raw is needed.
+
     while (foodsToDrawFrom.length < uniqueFoodCount) {
-      const randomIndex = Math.floor(Math.random() * availableFoods.length);
-      const food = availableFoods[randomIndex];
+      let pool = cookedFoods;
+      // If we ran out of cooked foods, or 10% chance, allow raw foods
+      if (cookedFoods.length === 0 || (rawFoods.length > 0 && Math.random() < 0.1)) {
+           pool = availableFoods;
+      }
+
+      if (pool.length === 0) break; // Should not happen given checks above
+
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      const food = pool[randomIndex];
       if (!foodsToDrawFrom.includes(food)) foodsToDrawFrom.push(food);
     }
 
@@ -152,9 +169,23 @@ export function getSuggestedDiets() {
     }
   }
 
-  // Sort by Balance Score primarily, then by Total Calories
+  // Sort by Balance Score primarily, then by Raw Food Penalty, then by Total Calories
   bestDiets.sort((a, b) => {
-    if (Math.abs(a.score - b.score) > 0.05) return a.score - b.score;
+    const scoreDiff = Math.abs(a.score - b.score);
+    if (scoreDiff > 0.05) {
+        return a.score - b.score;
+    }
+
+    // Secondary Sort: Avoid Raw Foods
+    const countRaw = (diet) => diet.diet.filter(f => f.Food_Name.toLowerCase().includes("raw")).length;
+    const rawA = countRaw(a);
+    const rawB = countRaw(b);
+
+    if (rawA !== rawB) {
+        return rawA - rawB; // Fewer raw foods is better
+    }
+
+    // Tertiary Sort: Higher Calories
     return b.totals.TotalCalories - a.totals.TotalCalories;
   });
 
