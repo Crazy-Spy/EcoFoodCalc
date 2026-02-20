@@ -78,9 +78,9 @@ export function getSuggestedDiets() {
     const foodsToDrawFrom = [];
 
     // Prefer non-raw foods when selecting available types
-    // Split foods into raw and cooked
-    const rawFoods = availableFoods.filter(f => f.Food_Name.toLowerCase().includes("raw"));
-    const cookedFoods = availableFoods.filter(f => !f.Food_Name.toLowerCase().includes("raw"));
+    // Split foods into raw and cooked using the Is_Raw property from the JSON
+    const rawFoods = availableFoods.filter(f => f.Is_Raw);
+    const cookedFoods = availableFoods.filter(f => !f.Is_Raw);
 
     // Bias selection: Try to pick from cooked foods first.
     // Only pick raw foods if we need more variety than cooked foods can offer,
@@ -177,7 +177,7 @@ export function getSuggestedDiets() {
     }
 
     // Secondary Sort: Avoid Raw Foods
-    const countRaw = (diet) => diet.diet.filter(f => f.Food_Name.toLowerCase().includes("raw")).length;
+    const countRaw = (diet) => diet.diet.filter(f => f.Is_Raw).length;
     const rawA = countRaw(a);
     const rawB = countRaw(b);
 
