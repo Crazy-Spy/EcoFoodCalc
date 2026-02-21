@@ -163,6 +163,7 @@ namespace Eco.Mods.TechTree
                         }
                         break;
                     case "debug":
+                        if (!user.IsAdmin) { user.Player.MsgLocStr("Permission Denied: This command is for admins only."); return; }
                         DebugMode = !DebugMode;
                         user.Player.MsgLocStr($"Debug mode is now {(DebugMode ? "ON" : "OFF")}.");
                         Log("Debug mode enabled via chat.");
@@ -177,20 +178,18 @@ namespace Eco.Mods.TechTree
                     case "taste":
                         ShowTasteList(user);
                         break;
-                    case "export":
-                        ExportTasteList(user);
-                        break;
                     case "help":
                         ShowHelp(user);
                         break;
                     default:
                         if (arg.StartsWith("config "))
                         {
+                            if (!user.IsAdmin) { user.Player.MsgLocStr("Permission Denied: This command is for admins only."); return; }
                             var parts = arg.Split(' ');
                             if (parts.Length > 1 && int.TryParse(parts[1], out int mins))
                             {
                                 CooldownMinutes = mins;
-                                user.Player.MsgLocStr($"Diet cooldown set to {CooldownMinutes} minutes.");
+                                user.Player.MsgLocStr($"Diet cooldown set to {CooldownMinutes} minutes (Global).");
                             }
                             else
                             {
@@ -199,7 +198,7 @@ namespace Eco.Mods.TechTree
                         }
                         else
                         {
-                            user.Player.MsgLocStr("Usage: /diet [meals | clear | debug | strict | config <minutes> | taste | export | help]");
+                            user.Player.MsgLocStr("Usage: /diet [meals | clear | strict | taste | help]");
                         }
                         break;
                 }
@@ -217,14 +216,15 @@ namespace Eco.Mods.TechTree
             sb.AppendLine("<b>Eco Diet Optimizer</b>");
             sb.AppendLine("This mod helps you maximize your skill gain by suggesting the best balanced diet based on your stomach size and known food preferences. It prioritizes balanced nutrition (25% each of Carbs, Fat, Protein, Vitamins).");
             sb.AppendLine();
-            sb.AppendLine("<b>Commands:</b>");
+            sb.AppendLine("<b>User Commands:</b>");
             sb.AppendLine("- <b>/diet</b>: Suggests the best balanced diet for 1 meal.");
             sb.AppendLine("- <b>/diet &lt;N&gt;</b>: Generates a shopping list for N meals based on the current suggestion.");
             sb.AppendLine("- <b>/diet taste</b>: Lists your discovered foods grouped by taste preference.");
-            sb.AppendLine("- <b>/diet export</b>: Displays your taste profile in chat (copy-friendly) and saves a backup file.");
             sb.AppendLine("- <b>/diet clear</b>: Clears the currently cached diet suggestion, forcing a recalculation.");
             sb.AppendLine("- <b>/diet strict</b>: Toggles strict discovery mode (On: Only known Good foods. Off: Includes potentially undiscovered foods).");
-            sb.AppendLine("- <b>/diet config &lt;minutes&gt;</b>: Sets the cooldown period for diet recalculation.");
+            sb.AppendLine();
+            sb.AppendLine("<b>Admin Commands:</b>");
+            sb.AppendLine("- <b>/diet config &lt;minutes&gt;</b>: Sets the global cooldown period for diet recalculation.");
             sb.AppendLine("- <b>/diet debug</b>: Toggles verbose logging to 'EcoDietOptimizer_Log.txt'.");
 
             user.Player.MsgLocStr(sb.ToString());
@@ -301,47 +301,6 @@ namespace Eco.Mods.TechTree
             user.Player.MsgLocStr(result);
         }
 
-        private static void ExportTasteList(User user)
-        {
-            string result = GenerateTasteListString(user, false); // Plain text for file
-
-            // Generate a simple CSV/JSON-like format for easier copying from chat
-            var tastes = GetTasteData(user);
-            StringBuilder exportSb = new StringBuilder();
-            exportSb.AppendLine("=== TASTE PROFILE EXPORT ===");
-            foreach(var t in tastes)
-            {
-                string name = "Unknown";
-                try { var item = Item.Get(t.Type); if (item != null) name = item.DisplayName.ToString(); } catch {}
-                exportSb.AppendLine($"{name}: {t.Preference}");
-            }
-            exportSb.AppendLine("=== END EXPORT ===");
-
-            user.Player.MsgLocStr(exportSb.ToString()); // Client Side Display
-
-            // File Backup
-            string cleanName = new string(user.Name.Where(char.IsLetterOrDigit).ToArray());
-            string exportFolder = Path.Combine("DietExports");
-            if (!Directory.Exists(exportFolder))
-            {
-                try { Directory.CreateDirectory(exportFolder); } catch {}
-            }
-
-            string filename = $"EcoDietExport_{cleanName}.txt";
-            string fullPath = Path.Combine(exportFolder, filename);
-
-            try
-            {
-                File.WriteAllText(fullPath, result);
-                user.Player.MsgLocStr($"Backup saved to server: {filename}");
-            }
-            catch (Exception ex)
-            {
-                // Silently fail or log if server file write fails, user got chat output
-                Log($"Export file write failed: {ex.Message}");
-            }
-        }
-
         private static void HandleDietRequest(User user, int meals)
         {
             if (user == null || user.Player == null) return;
@@ -386,6 +345,11 @@ namespace Eco.Mods.TechTree
             else if (meals > 0)
             {
                  user.Player.MsgLocStr("Diet cache expired. Recalculating...");
+            }
+            else
+            {
+                 // Default case: /diet with no args and no cache
+                 user.Player.MsgLocStr("Calculating diet...");
             }
 
             DietPlan newPlan = FindBestDiet(user);
