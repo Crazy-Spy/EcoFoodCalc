@@ -26,6 +26,7 @@ namespace Eco.Mods.TechTree
         public float Protein { get; set; }
         public float Vitamins { get; set; }
         public float AverageTier { get; set; }
+        public float AverageLevel { get; set; }
     }
 
     public class DietResult
@@ -106,6 +107,10 @@ namespace Eco.Mods.TechTree
                             if (parts.Length > 9) float.TryParse(parts[9], out tier);
                             plan.AverageTier = tier;
 
+                            float level = 0;
+                            if (parts.Length > 10) float.TryParse(parts[10], out level);
+                            plan.AverageLevel = level;
+
                             DietCache[userId] = new DietResult { GeneratedAt = new DateTime(ticks), Plan = plan };
                         }
                     }
@@ -126,7 +131,7 @@ namespace Eco.Mods.TechTree
                         var r = kvp.Value;
                         var p = r.Plan;
                         string foodStr = string.Join(",", p.Foods.Select(f => $"{f.Key}:{f.Value}"));
-                        lines.Add($"{kvp.Key};;{r.GeneratedAt.Ticks};;{foodStr};;{p.Score};;{p.TotalCalories};;{p.Carbs};;{p.Fat};;{p.Protein};;{p.Vitamins};;{p.AverageTier}");
+                        lines.Add($"{kvp.Key};;{r.GeneratedAt.Ticks};;{foodStr};;{p.Score};;{p.TotalCalories};;{p.Carbs};;{p.Fat};;{p.Protein};;{p.Vitamins};;{p.AverageTier};;{p.AverageLevel}");
                     }
                     File.WriteAllLines(CacheFilePath, lines);
                 }
@@ -397,27 +402,39 @@ namespace Eco.Mods.TechTree
             } catch { }
             Log($"Stomach size: {stomachSize}");
 
-            var availableFoods = new List<(FoodItem Item, int Tier)>();
+            var availableFoods = new List<(FoodItem Item, int Tier, int Level)>();
 
             // Get Known Tastes (Reliable Source)
             var tasteData = GetTasteData(user);
             Log($"Taste Data Found: {tasteData.Count} items.");
 
-            // Cold Start Fix: If tasteData is empty, the game might not have initialized TasteBuds yet.
-            // We force a "touch" of the stomach contents or inventory to wake up the system.
+            // Cold Start Fix: Aggressive Wake-Up
             if (tasteData.Count == 0)
             {
                 Log("TasteBuds returned 0 items. Attempting to wake up the system...");
                 try {
+                     // 1. Stomach Contents
                      var stomach = user.GetType().GetProperty("Stomach")?.GetValue(user);
                      if (stomach != null) {
                          var contents = stomach.GetType().GetProperty("Contents")?.GetValue(stomach);
                          if (contents == null) stomach.GetType().GetField("Contents")?.GetValue(stomach);
                      }
-                     // Retry fetching taste data
+
+                     // 2. Inventory
+                     var inv = user.GetType().GetProperty("Inventory")?.GetValue(user);
+                     if (inv != null)
+                     {
+                         inv.GetType().GetProperty("Toolbar")?.GetValue(inv);
+                         inv.GetType().GetProperty("Backpack")?.GetValue(inv);
+                     }
+
+                     // 3. Skillset
+                     user.GetType().GetProperty("Skillset")?.GetValue(user);
+
+                     // Retry
                      tasteData = GetTasteData(user);
                      Log($"Retry Taste Data Found: {tasteData.Count} items.");
-                } catch {}
+                } catch (Exception ex) { Log($"WakeUp Error: {ex}"); }
             }
 
             // Determine exclusions based on taste
@@ -445,7 +462,6 @@ namespace Eco.Mods.TechTree
                 {
                     knownGoodTypes.Add(t.Type);
                 }
-                // Any other preference (e.g. "Unknown") is ignored in Strict Mode.
             }
 
             void AddFoodIfValid(FoodItem food)
@@ -454,23 +470,18 @@ namespace Eco.Mods.TechTree
                 if (food.Calories <= 0) return;
                 if (food.Calories > stomachSize) return;
 
-                // Heuristic: Filter out raw ingredients unless requested?
-                // For now, we filter things tagged as "Ingredient" or similar if possible.
-                // We check the name for "Raw" as a basic heuristic.
                 string name = food.DisplayName.ToString();
                 if (name.StartsWith("Raw ") || name.Contains(" Yeast") || name.Contains("Flour"))
                 {
-                     // Could be refined by checking IsIngredient helper
                      if (IsIngredient(food)) return;
                 }
 
-                int tier = GetFoodTier(food);
-                availableFoods.Add((food, tier));
+                var (tier, level) = GetFoodRank(food);
+                availableFoods.Add((food, tier, level));
             }
 
             if (StrictMode)
             {
-                // Strict Mode: Only use known GOOD foods.
                 foreach(var type in knownGoodTypes)
                 {
                      try
@@ -482,7 +493,6 @@ namespace Eco.Mods.TechTree
             }
             else
             {
-                // Non-Strict Mode: Use ALL foods, excluding Known Bad ones.
                 IEnumerable<FoodItem> allFoods = null;
                 try
                 {
@@ -516,98 +526,32 @@ namespace Eco.Mods.TechTree
             Log($"Total available foods for calculation: {availableFoods.Count}");
             if (availableFoods.Count == 0) return null;
 
-            int MAX_ITERATIONS = 5000;
-            int MAX_ITEMS_TYPES = 6;
+            // Sort Candidates: High Tier > High Level > High Calorie
+            var ranked = availableFoods.OrderByDescending(f => f.Tier)
+                                       .ThenByDescending(f => f.Level)
+                                       .ThenByDescending(f => f.Item.Calories)
+                                       .ToList();
+
+            // Selection Strategy: Highest Possible Tier Pool
+            int maxTier = ranked.Max(x => x.Tier);
+            var pool = ranked.Where(x => x.Tier == maxTier).ToList();
+
+            // Fallback for Variety: If top tier pool is too small (< 2), include next tier down
+            if (pool.Count < 2)
+            {
+                pool = ranked.Where(x => x.Tier >= maxTier - 1).ToList();
+            }
+
+            int MAX_ITERATIONS = 3000;
             List<DietPlan> bestDiets = new List<DietPlan>();
-
-            // Tier-Biased Selection
-            // Instead of pure random, we create a weighted pool where high-tier items appear more often?
-            // Or we sort by Tier and bias the selection towards the top.
-
-            // Let's use a "Candidate Pool" strategy.
-            // 1. Sort foods by Tier (Desc) then Calories (Desc).
-            var sortedFoods = availableFoods.OrderByDescending(f => f.Tier).ThenByDescending(f => f.Item.Calories).ToList();
-
-            // We want to favor high tiers.
-            // Let's allow the randomizer to pick from the top N% more often.
 
             for(int i=0; i < MAX_ITERATIONS; i++)
             {
-                int maxUnique = Math.Min(sortedFoods.Count, MAX_ITEMS_TYPES);
-                int uniqueCount = rng.Next(Math.Min(2, maxUnique), maxUnique + 1);
-
-                var selectedItems = new List<(FoodItem Item, int Tier)>();
-                var pool = new List<(FoodItem Item, int Tier)>(sortedFoods); // Copy
-
-                // Selection Phase: High probability to pick high-tier items
-                for(int k=0; k<uniqueCount; k++)
-                {
-                    // Bias index towards 0 (High tier)
-                    // Using a power curve: idx = floor(pool.Count * (1 - sqrt(1 - random))) ?
-                    // Simple weighted random: Pick from top half 70% of time?
-                    // Let's use a simple geometric distribution-ish approach
-                    // Or just pick randomly from a pool that is NOT shuffled? No, need randomness.
-
-                    int idx = 0;
-                    double r = rng.NextDouble();
-                    if (r < 0.5) // 50% chance to pick from top 20%
-                        idx = rng.Next((int)(pool.Count * 0.2) + 1);
-                    else if (r < 0.8) // 30% chance to pick from next 30%
-                         idx = rng.Next((int)(pool.Count * 0.5) + 1);
-                    else
-                         idx = rng.Next(pool.Count);
-
-                    if (idx >= pool.Count) idx = pool.Count - 1;
-
-                    selectedItems.Add(pool[idx]);
-                    pool.RemoveAt(idx);
-                }
-
-                float currentCals = 0;
-                var dietList = new List<FoodItem>();
-
-                // Filling Phase
-                // Try to fill with the selected types.
-                // We want to maximize stomach usage.
-
-                var drawPool = new List<FoodItem>(selectedItems.Select(x => x.Item));
-                int attemptLimit = 100;
-
-                while(currentCals < stomachSize && drawPool.Count > 0 && attemptLimit > 0)
-                {
-                    // Prioritize adding the highest calorie/tier item from the selected set that fits?
-                    // Or keep it random to allow finding combinations?
-                    int idx = rng.Next(drawPool.Count);
-                    var food = drawPool[idx];
-
-                    if (currentCals + food.Calories <= stomachSize)
-                    {
-                        dietList.Add(food);
-                        currentCals += food.Calories;
-                    }
-                    else
-                    {
-                        // If it doesn't fit, remove it from this specific fill attempt
-                        // (assuming we can't fit another one of this type, which is true if all units are same size.
-                        // But wait, "stomach usage" is calories.
-                        // If we have 100 space left, and food is 500, we can't eat it.
-                        drawPool.RemoveAt(idx);
-                    }
-                    attemptLimit--;
-                }
-
-                // Check if we utilized the stomach well (e.g., > 80%)
-                if (currentCals < stomachSize * 0.8) continue;
-                if (dietList.Count < 2) continue;
-
-                bestDiets.Add(AnalyzeDiet(dietList));
+                var plan = GenerateRandomPlan(pool.Select(x => x.Item).ToList(), stomachSize);
+                if (plan != null) bestDiets.Add(plan);
             }
 
-            // Sorting Final Results
-            // 1. Maximize Average Tier
-            // 2. Minimize Variance (Score)
-            // 3. Maximize Total Calories
-
+            // Sort Results: Max Tier > Min Score (Best Balance) > Max Calories
             var sorted = bestDiets
                 .OrderByDescending(d => d.AverageTier)
                 .ThenBy(d => d.Score)
@@ -617,54 +561,94 @@ namespace Eco.Mods.TechTree
             return sorted.FirstOrDefault();
         }
 
-        private static int GetFoodTier(FoodItem food)
+        private static DietPlan GenerateRandomPlan(List<FoodItem> pool, float stomachSize)
+        {
+            var diet = new List<FoodItem>();
+            float currentCals = 0;
+
+            // Target Variety: Try to pick 3-5 distinct items if possible
+            int distinctTarget = Math.Min(pool.Count, 4);
+            var shuffled = pool.OrderBy(x => rng.Next()).ToList();
+
+            // Initial Fill (Distinct items for variety)
+            for(int k=0; k<distinctTarget; k++)
+            {
+                if (currentCals + shuffled[k].Calories <= stomachSize)
+                {
+                    diet.Add(shuffled[k]);
+                    currentCals += shuffled[k].Calories;
+                }
+            }
+
+            // Random Fill for remaining space
+            int attemptLimit = 100;
+            while(currentCals < stomachSize && attemptLimit > 0)
+            {
+                var candidate = pool[rng.Next(pool.Count)];
+                if (currentCals + candidate.Calories <= stomachSize)
+                {
+                     diet.Add(candidate);
+                     currentCals += candidate.Calories;
+                }
+                else
+                {
+                    // Full or doesn't fit
+                    attemptLimit--;
+                }
+            }
+
+            if (currentCals < stomachSize * 0.8) return null; // Too small
+            return AnalyzeDiet(diet);
+        }
+
+        private static (int Tier, int Level) GetFoodRank(FoodItem food)
         {
             try
             {
-                // 1. Try Direct Property "Tier" on Item
+                int tier = 0;
+                // 1. Try Direct Property "Tier" on Item as fallback/initial
                 var tierProp = food.GetType().GetProperty("Tier");
                 if (tierProp != null)
                 {
                     int val = Convert.ToInt32(tierProp.GetValue(food));
-                    if (val > 0) return val;
+                    if (val > 0) tier = val;
                 }
 
                 var skillAttrs = food.GetType().GetCustomAttributes(false);
-                // Eco uses RequiresSkillAttribute which might be generic or not depending on version.
-                // We'll inspect via string to be safe.
 
                 foreach(var attr in skillAttrs)
                 {
                     string typeName = attr.GetType().Name;
                     if (typeName.Contains("RequiresSkill"))
                     {
-                        // Try to get the skill type
-                        // Usually [RequiresSkill(typeof(AdvancedCookingSkill), 1)]
-                        // We need to inspect the constructor arguments or properties
-                        // But reflection on attributes is tricky if we don't have the type.
-                        // However, we can use `attr.ToString()`?
-
-                        // Better approach: Look for property "SkillType" on the attribute instance
                         var skillTypeProp = attr.GetType().GetProperty("SkillItemType") ?? attr.GetType().GetProperty("SkillType");
+                        var levelProp = attr.GetType().GetProperty("Level");
+
                         if (skillTypeProp != null)
                         {
                             var skillType = skillTypeProp.GetValue(attr) as Type;
                             if (skillType != null)
                             {
                                 string skillName = skillType.Name;
-                                if (skillName.Contains("CuttingEdgeCooking")) return 4;
-                                if (skillName.Contains("AdvancedCooking") || skillName.Contains("AdvancedBaking")) return 3;
-                                if (skillName.Contains("Cooking") || skillName.Contains("Baking")) return 2;
-                                if (skillName.Contains("Campfire")) return 1;
+                                if (skillName.Contains("CuttingEdgeCooking")) tier = 4;
+                                else if (skillName.Contains("AdvancedCooking") || skillName.Contains("AdvancedBaking")) tier = 3;
+                                else if (skillName.Contains("Cooking") || skillName.Contains("Baking")) tier = 2;
+                                else if (skillName.Contains("Campfire")) tier = 1;
                             }
+                        }
+
+                        if (levelProp != null && tier > 0)
+                        {
+                            int level = Convert.ToInt32(levelProp.GetValue(attr));
+                            return (tier, level);
                         }
                     }
                 }
 
-                // Fallback: Check if item tags contain skill info? Unlikely.
+                return (tier, 0);
             }
             catch {}
-            return 0; // Default Tier
+            return (0, 0);
         }
 
         private static DietPlan AnalyzeDiet(List<FoodItem> diet)
@@ -673,6 +657,7 @@ namespace Eco.Mods.TechTree
 
             float c = 0, f = 0, p = 0, v = 0, cals = 0;
             float totalTier = 0;
+            float totalLevel = 0;
             var counts = new Dictionary<string, int>();
 
             foreach(var item in diet)
@@ -682,7 +667,10 @@ namespace Eco.Mods.TechTree
                 p += item.Nutrition.Protein;
                 v += item.Nutrition.Vitamins;
                 cals += item.Calories;
-                totalTier += GetFoodTier(item);
+
+                var (t, l) = GetFoodRank(item);
+                totalTier += t;
+                totalLevel += l;
 
                 string name = item.UILink(); // Use UILink for interactive chat tags
                 if (!counts.ContainsKey(name)) counts[name] = 0;
@@ -712,14 +700,15 @@ namespace Eco.Mods.TechTree
                 Fat = f,
                 Protein = p,
                 Vitamins = v,
-                AverageTier = totalTier / diet.Count
+                AverageTier = totalTier / diet.Count,
+                AverageLevel = totalLevel / diet.Count
             };
         }
 
         private static void DisplayDiet(User user, DietPlan plan)
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"<b>Recommended Diet</b> (Score: {plan.Score:F2}, Cals: {plan.TotalCalories:F0}, Tier: {plan.AverageTier:F1})");
+            sb.AppendLine($"<b>Recommended Diet</b> (Score: {plan.Score:F2}, Cals: {plan.TotalCalories:F0}, Tier: {plan.AverageTier:F1}, Level: {plan.AverageLevel:F1})");
             sb.AppendLine("<b>Eat (Per Meal):</b>");
             foreach(var kvp in plan.Foods)
             {
