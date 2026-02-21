@@ -102,7 +102,8 @@ namespace Eco.Mods.TechTree
                             };
 
                             // Attempt to parse new fields if available, otherwise default
-                            if (parts.Length > 9) float.TryParse(parts[9], out float tier);
+                            float tier = 0;
+                            if (parts.Length > 9) float.TryParse(parts[9], out tier);
                             plan.AverageTier = tier;
 
                             DietCache[userId] = new DietResult { GeneratedAt = new DateTime(ticks), Plan = plan };
