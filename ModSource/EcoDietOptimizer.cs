@@ -10,6 +10,7 @@ namespace Eco.Mods.TechTree
     using Eco.Gameplay.Items;
     using Eco.Gameplay.Players;
     using Eco.Gameplay.Systems.Messaging.Chat.Commands;
+    using Eco.Gameplay.Systems.TextLinks;
     using Eco.Shared.Localization;
     using Eco.Shared.Math;
     using Eco.Shared.Utils;
@@ -176,6 +177,9 @@ namespace Eco.Mods.TechTree
                     case "taste":
                         ShowTasteList(user);
                         break;
+                    case "export":
+                        ExportTasteList(user);
+                        break;
                     default:
                         if (arg.StartsWith("config "))
                         {
@@ -192,7 +196,7 @@ namespace Eco.Mods.TechTree
                         }
                         else
                         {
-                            user.Player.MsgLocStr("Usage: /diet [meals | clear | debug | strict | config <minutes> | taste]");
+                            user.Player.MsgLocStr("Usage: /diet [meals | clear | debug | strict | config <minutes> | taste | export]");
                         }
                         break;
                 }
@@ -204,7 +208,7 @@ namespace Eco.Mods.TechTree
             }
         }
 
-        private static void ShowTasteList(User user)
+        private static string GenerateTasteListString(User user, bool richText)
         {
             bool failed = false;
             // Key: Preference (String), Value: List of Food Names
@@ -212,14 +216,9 @@ namespace Eco.Mods.TechTree
             bool favDiscovered = IsFavoriteDiscovered(user);
             bool worstDiscovered = IsWorstDiscovered(user);
 
-            if (failed)
-            {
-                user.Player.MsgLocStr("Failed to retrieve taste list. Check debug log.");
-                return;
-            }
+            if (failed) return "Failed to retrieve taste list.";
 
             StringBuilder sb = new StringBuilder();
-
             int totalCount = 0;
 
             // Colors
@@ -229,16 +228,17 @@ namespace Eco.Mods.TechTree
             string cBad    = "#ff7f7f";
             string cHorr   = "#f50000";
 
-            string ColorText(string text, string hex) => $"<color={hex}>{text}</color>";
+            string ColorText(string text, string hex) => richText ? $"<color={hex}>{text}</color>" : text;
+            string Bold(string text) => richText ? $"<b>{text}</b>" : text;
 
             // Favorite
             string favName = "Unknown";
             if (favDiscovered && groupedFoods.ContainsKey("Favorite") && groupedFoods["Favorite"].Any())
             {
-                favName = groupedFoods["Favorite"].First();
+                favName = groupedFoods["Favorite"].First(); // Should be item link now from helper
                 totalCount += groupedFoods["Favorite"].Count;
             }
-            sb.AppendLine($"<b>{ColorText("Favorite", cFavDel)}:</b> {favName}");
+            sb.AppendLine($"{Bold(ColorText("Favorite", cFavDel))}: {favName}");
 
             // Worst
             string worstName = "Unknown";
@@ -247,14 +247,14 @@ namespace Eco.Mods.TechTree
                 worstName = groupedFoods["Worst"].First();
                 totalCount += groupedFoods["Worst"].Count;
             }
-            sb.AppendLine($"<b>{ColorText("Worst", cHorr)}:</b> {worstName}");
+            sb.AppendLine($"{Bold(ColorText("Worst", cHorr))}: {worstName}");
 
             // Group Output Helper
             void AppendGroup(string key, string colorHex)
             {
                 if (groupedFoods.ContainsKey(key) && groupedFoods[key].Count > 0)
                 {
-                    sb.AppendLine($"--- <b>{ColorText(key, colorHex)}</b> ---");
+                    sb.AppendLine($"--- {Bold(ColorText(key, colorHex))} ---");
                     foreach(var food in groupedFoods[key])
                     {
                         sb.AppendLine($"- {food}");
@@ -272,9 +272,30 @@ namespace Eco.Mods.TechTree
             sb.AppendLine();
             sb.AppendLine($"Total of known foods: {totalCount}");
 
-            string result = sb.ToString();
+            return sb.ToString();
+        }
+
+        private static void ShowTasteList(User user)
+        {
+            string result = GenerateTasteListString(user, true);
             Log(result);
             user.Player.MsgLocStr(result);
+        }
+
+        private static void ExportTasteList(User user)
+        {
+            string result = GenerateTasteListString(user, false); // Plain text for file
+            string cleanName = new string(user.Name.Where(char.IsLetterOrDigit).ToArray());
+            string filename = $"EcoDietExport_{cleanName}.txt";
+            try
+            {
+                File.WriteAllText(filename, result);
+                user.Player.MsgLocStr($"Exported taste data to {filename}");
+            }
+            catch (Exception ex)
+            {
+                user.Player.MsgLocStr($"Export failed: {ex.Message}");
+            }
         }
 
         private static void HandleDietRequest(User user, int meals)
@@ -370,7 +391,6 @@ namespace Eco.Mods.TechTree
 
             if (tasteApiFailed)
             {
-                 // Fallback to old discovery logic if TasteBuds fails completely
                  user.Player.MsgLocStr("Warning: Taste API unavailable. Falling back to basic discovery check.");
                  IEnumerable<FoodItem> allFoods = null;
                  try
@@ -495,7 +515,7 @@ namespace Eco.Mods.TechTree
                 v += item.Nutrition.Vitamins;
                 cals += item.Calories;
 
-                string name = item.DisplayName.ToString();
+                string name = item.UILink(); // Use UILink for interactive chat tags
                 if (!counts.ContainsKey(name)) counts[name] = 0;
                 counts[name]++;
             }
@@ -533,6 +553,7 @@ namespace Eco.Mods.TechTree
             sb.AppendLine("<b>Eat (Per Meal):</b>");
             foreach(var kvp in plan.Foods)
             {
+                // Key is already UILink from AnalyzeDiet
                 sb.AppendLine($"- {kvp.Key}: {kvp.Value}");
             }
 
@@ -810,23 +831,15 @@ namespace Eco.Mods.TechTree
 
                 foreach(var kvp in dict)
                 {
-                    // Special check: Only include Favorite if it's actually discovered
                     if (kvp.Key.Equals("Favorite", StringComparison.OrdinalIgnoreCase) && !favDisc)
                         continue;
 
                     if (allowed.Any(a => a.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase)))
                     {
-                        // We need to re-find types.
-                        // To avoid double reflection, we can just grab from dict if dict stored Types.
-                        // But dict stores strings.
-                        // So we just re-iterate below for types.
-                        // Optimization: GetGrouped could return complex object or we just do loop here.
-                        // Let's use the loop below for "Type" extraction but with strict matching logic.
+                        // We iterate below to get types, this is just a placeholder logic check if needed
                     }
                 }
             } catch {}
-
-            // Re-implement iteration to return TYPES directly
 
             try
             {
@@ -951,11 +964,11 @@ namespace Eco.Mods.TechTree
                              var type = keyObj as Type;
                              if (type == null) continue;
 
-                             // Get Food Name
+                             // Get Food Name using UILink
                              string foodName = "Unknown";
                              try {
                                  var item = Item.Get(type);
-                                 if (item != null) foodName = item.DisplayName.ToString();
+                                 if (item != null) foodName = item.UILink(); // Use Link for export too
                              } catch {}
 
                              object enumVal = null;
