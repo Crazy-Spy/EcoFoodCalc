@@ -1,4 +1,57 @@
-# 🥦 Eco Food Calculator (EcoFoodCalc)
+# 🥗 Eco Diet Optimizer (Server Mod)
+
+A server-side mod for [Eco](https://play.eco/) that suggests the optimal diet for skill gain based on your **Stomach Size** and **Food Preferences (TasteBuds)**.
+
+## ✨ Features
+
+*   **In-Game Commands**: Access all features directly from the chat window.
+*   **Personalized**: Reads your character's stomach capacity and discovered tastes.
+*   **Smart Algorithm**: Prioritizes **Tier > Level > Taste > Nutrient Balance** to maximize skill gain multiplier.
+    *   Finds high-tier foods (e.g., Tier 4 Cutting Edge Cooking) first.
+    *   Mixes them to achieve a perfect 25/25/25/25 nutrient balance.
+    *   Avoids foods you dislike (Bad/Horrible/Worst).
+*   **Shopping List**: Generate a shopping list for N meals.
+*   **Strict Mode**: Choose between using only foods you've tasted ("Strict") or discovering new ones.
+
+## 🚀 Installation
+
+1.  **Download**: Get the file `ModSource/EcoDietOptimizer.cs` from this repository.
+2.  **Deploy**: Place the file into your Eco Server's `Mods/User/` directory.
+    *   Path: `your_server_folder/Mods/User/EcoDietOptimizer.cs`
+3.  **Restart**: Restart your Eco Server. The mod will compile automatically.
+
+## 🎮 Usage
+
+Type these commands in the in-game chat:
+
+*   `/diet`
+    *   Suggests the best balanced diet for 1 meal based on your current stomach size and preferences.
+*   `/diet <number_of_meals>`
+    *   Examples: `/diet 5`, `/diet 10`
+    *   Generates a shopping list for the specified number of meals based on the current suggestion.
+*   `/diet strict`
+    *   Toggles **Strict Discovery Mode**.
+    *   **ON (Default)**: Suggests only foods you have already discovered/tasted.
+    *   **OFF**: Suggests any food in the game (great for finding new foods to try).
+*   `/diet taste`
+    *   Lists all foods you have discovered, grouped by your preference (Delicious, Good, Ok, Bad, etc.).
+*   `/diet clear`
+    *   Clears the cached diet suggestion, forcing a recalculation.
+*   `/diet help`
+    *   Shows the help menu.
+
+---
+
+## 🔧 Admin Commands
+
+*   `/diet config <minutes>`: Sets the global cooldown period for diet recalculation (default: 1440 mins / 24 hours).
+*   `/diet debug`: Toggles verbose logging to `EcoDietOptimizer_Log.txt`.
+
+---
+
+# 🥦 Eco Food Calculator (Legacy Web App)
+
+*The section below describes the original web application logic which inspired this mod.*
 
 ## 🚧 Project Status: Feature Complete (Functional Dev UI)
 
