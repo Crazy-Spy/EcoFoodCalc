@@ -427,22 +427,25 @@ namespace Eco.Mods.TechTree
 
             foreach(var t in tasteData)
             {
-                if (t.Preference.Equals("Bad", StringComparison.OrdinalIgnoreCase) ||
-                    t.Preference.Equals("Horrible", StringComparison.OrdinalIgnoreCase))
+                string p = t.Preference;
+                if (p.Equals("Bad", StringComparison.OrdinalIgnoreCase) ||
+                    p.Equals("Horrible", StringComparison.OrdinalIgnoreCase) ||
+                    p.Equals("Worst", StringComparison.OrdinalIgnoreCase))
                 {
                     knownBadTypes.Add(t.Type);
                 }
-                else if (t.Preference.Equals("Favorite", StringComparison.OrdinalIgnoreCase) && !favDiscovered)
+                else if (p.Equals("Favorite", StringComparison.OrdinalIgnoreCase))
                 {
-                    // If favorite isn't "discovered", treat it as unknown/hidden for Strict purposes?
-                    // Actually, if it's in the list, the engine knows about it.
-                    // But standard game logic hides the "Favorite" unless discovered.
-                    knownBadTypes.Add(t.Type); // Treat as excluded for safety until discovered
+                    if (favDiscovered) knownGoodTypes.Add(t.Type);
+                    else knownBadTypes.Add(t.Type); // Treat as excluded/hidden
                 }
-                else
+                else if (p.Equals("Delicious", StringComparison.OrdinalIgnoreCase) ||
+                         p.Equals("Good", StringComparison.OrdinalIgnoreCase) ||
+                         p.Equals("Ok", StringComparison.OrdinalIgnoreCase))
                 {
                     knownGoodTypes.Add(t.Type);
                 }
+                // Any other preference (e.g. "Unknown") is ignored in Strict Mode.
             }
 
             void AddFoodIfValid(FoodItem food)
@@ -622,7 +625,8 @@ namespace Eco.Mods.TechTree
                 var tierProp = food.GetType().GetProperty("Tier");
                 if (tierProp != null)
                 {
-                    return Convert.ToInt32(tierProp.GetValue(food));
+                    int val = Convert.ToInt32(tierProp.GetValue(food));
+                    if (val > 0) return val;
                 }
 
                 var skillAttrs = food.GetType().GetCustomAttributes(false);
