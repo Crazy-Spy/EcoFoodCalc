@@ -47,7 +47,7 @@ namespace Eco.Mods.TechTree
         private static Random rng = new Random();
         private static int CooldownMinutes = 1440;
         private static bool DebugMode = false;
-        private static bool StrictMode = false;
+        private static bool StrictMode = true;
 
         public void Initialize(TimedTask timer)
         {
@@ -176,7 +176,7 @@ namespace Eco.Mods.TechTree
                         break;
                     case "strict":
                         StrictMode = !StrictMode;
-                        user.Player.MsgLocStr($"Strict Discovery Mode is now {(StrictMode ? "ON" : "OFF")}.");
+                        user.Player.MsgLocStr($"Strict Discovery Mode (Only Tasted Foods) is now {(StrictMode ? "ON" : "OFF")}.");
                         break;
                     case "probe":
                         ProbeReflection(user);
@@ -223,11 +223,11 @@ namespace Eco.Mods.TechTree
             sb.AppendLine("This mod helps you maximize your skill gain by suggesting the best balanced diet based on your stomach size and known food preferences. It prioritizes balanced nutrition (25% each of Carbs, Fat, Protein, Vitamins).");
             sb.AppendLine();
             sb.AppendLine("<b>User Commands:</b>");
-            sb.AppendLine("- <b>/diet</b>: Suggests the best balanced diet for 1 meal.");
+            sb.AppendLine("- <b>/diet</b>: Suggests the best balanced diet for 1 meal (Uses only tasted foods by default).");
             sb.AppendLine("- <b>/diet &lt;N&gt;</b>: Generates a shopping list for N meals based on the current suggestion.");
             sb.AppendLine("- <b>/diet taste</b>: Lists your discovered foods grouped by taste preference.");
             sb.AppendLine("- <b>/diet clear</b>: Clears the currently cached diet suggestion, forcing a recalculation.");
-            sb.AppendLine("- <b>/diet strict</b>: Toggles strict discovery mode (On: Only known Good foods. Off: Includes potentially undiscovered foods).");
+            sb.AppendLine("- <b>/diet strict</b>: Toggles strict discovery mode (On: Only known/tasted foods. Off: Includes all foods).");
             sb.AppendLine();
             sb.AppendLine("<b>Admin Commands:</b>");
             sb.AppendLine("- <b>/diet config &lt;minutes&gt;</b>: Sets the global cooldown period for diet recalculation.");
@@ -451,6 +451,16 @@ namespace Eco.Mods.TechTree
                 if (food.Calories <= 0) return;
                 if (food.Calories > stomachSize) return;
 
+                // Heuristic: Filter out raw ingredients unless requested?
+                // For now, we filter things tagged as "Ingredient" or similar if possible.
+                // We check the name for "Raw" as a basic heuristic.
+                string name = food.DisplayName.ToString();
+                if (name.StartsWith("Raw ") || name.Contains(" Yeast") || name.Contains("Flour"))
+                {
+                     // Could be refined by checking IsIngredient helper
+                     if (IsIngredient(food)) return;
+                }
+
                 int tier = GetFoodTier(food);
                 availableFoods.Add((food, tier));
             }
@@ -608,6 +618,13 @@ namespace Eco.Mods.TechTree
         {
             try
             {
+                // 1. Try Direct Property "Tier" on Item
+                var tierProp = food.GetType().GetProperty("Tier");
+                if (tierProp != null)
+                {
+                    return Convert.ToInt32(tierProp.GetValue(food));
+                }
+
                 var skillAttrs = food.GetType().GetCustomAttributes(false);
                 // Eco uses RequiresSkillAttribute which might be generic or not depending on version.
                 // We'll inspect via string to be safe.
@@ -738,8 +755,8 @@ namespace Eco.Mods.TechTree
             {
                 sb.AppendLine($"- {kvp.Key}: {kvp.Value * meals}");
             }
-             Log(sb.ToString());
-             user.Player.MsgLocStr(sb.ToString());
+            Log(sb.ToString());
+            user.Player.MsgLocStr(sb.ToString());
         }
 
         private static bool IsHiddenOrBlacklisted(FoodItem food)
@@ -777,20 +794,56 @@ namespace Eco.Mods.TechTree
             return false;
         }
 
+        private static bool IsIngredient(FoodItem food)
+        {
+            try
+            {
+                var tagsProp = food.GetType().GetProperty("Tags");
+                if (tagsProp != null)
+                {
+                    var tags = tagsProp.GetValue(food) as IEnumerable<string>;
+                    if (tags != null)
+                    {
+                        foreach(var t in tags)
+                        {
+                            if (t.Equals("Ingredient", StringComparison.OrdinalIgnoreCase)) return true;
+                        }
+                    }
+                }
+            }
+            catch {}
+            return false;
+        }
+
         private static void ProbeReflection(User user)
         {
-             // Simplified probe
+             // Enhanced probe
              var sb = new StringBuilder();
-             sb.AppendLine("Reflection Probe V3:");
+             sb.AppendLine("Reflection Probe V4:");
              try {
                  var tastes = GetTasteData(user);
                  sb.AppendLine($"Found {tastes.Count} taste entries.");
-                 foreach(var t in tastes.Take(5))
+
+                 // Inspect a sample food item
+                 if (tastes.Count > 0)
                  {
-                     sb.AppendLine($"- {t.Type.Name}: {t.Preference}");
+                     var type = tastes.First().Type;
+                     var item = Item.Get(type);
+                     if (item != null)
+                     {
+                         sb.AppendLine($"Inspecting {item.DisplayName}:");
+                         foreach(var prop in item.GetType().GetProperties())
+                         {
+                             try {
+                                 var val = prop.GetValue(item);
+                                 sb.AppendLine($"- {prop.Name}: {val}");
+                             } catch {}
+                         }
+                     }
                  }
              } catch (Exception ex) { sb.AppendLine($"Error: {ex.Message}"); }
-             user.Player.MsgLocStr(sb.ToString());
+             Log(sb.ToString());
+             user.Player.MsgLocStr("Probe results logged to file (too large for chat).");
         }
 
         private static bool IsFavoriteDiscovered(User user)
@@ -827,7 +880,7 @@ namespace Eco.Mods.TechTree
         // Returns list of (FoodType, PreferenceString)
         private static List<(Type Type, string Preference)> GetTasteData(User user)
         {
-            var results = new List<(Type, string)>();
+            var results = new List<(Type Type, string Preference)>();
             try
             {
                 var stomachProp = user.GetType().GetProperty("Stomach");
