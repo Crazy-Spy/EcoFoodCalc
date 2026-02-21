@@ -219,12 +219,12 @@ namespace Eco.Mods.TechTree
             sb.AppendLine();
             sb.AppendLine("<b>Commands:</b>");
             sb.AppendLine("- <b>/diet</b>: Suggests the best balanced diet for 1 meal.");
-            sb.AppendLine("- <b>/diet &lt;N&gt;</b>: Generates a shopping list for N meals based on the current suggestion.");
+            sb.AppendLine("- <b>/diet N;</b>: Generates a shopping list for N meals based on the current suggestion.");
             sb.AppendLine("- <b>/diet taste</b>: Lists your discovered foods grouped by taste preference.");
             sb.AppendLine("- <b>/diet export</b>: Saves your taste profile to a text file in the 'DietExports' folder.");
             sb.AppendLine("- <b>/diet clear</b>: Clears the currently cached diet suggestion, forcing a recalculation.");
             sb.AppendLine("- <b>/diet strict</b>: Toggles strict discovery mode (hides potentially undiscovered items).");
-            sb.AppendLine("- <b>/diet config &lt;minutes&gt;</b>: Sets the cooldown period for diet recalculation.");
+            sb.AppendLine("- <b>/diet config N</b>: Sets the cooldown period for diet recalculation in minutes.");
             sb.AppendLine("- <b>/diet debug</b>: Toggles verbose logging to 'EcoDietOptimizer_Log.txt'.");
 
             user.Player.MsgLocStr(sb.ToString());
