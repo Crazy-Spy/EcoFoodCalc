@@ -57,6 +57,7 @@ import {
   updateSessionStatus,
   updateFoodContainerStatus,
   updateLastCommitDate,
+  renderImportDialog,
 } from "./view.js";
 
 import { processImage, parseOCRText } from "./ocr.js";
@@ -96,56 +97,23 @@ export async function handleScreenshotUpload(event) {
     localStorage.setItem(SORT_COLUMN_KEY, "ORDER_PRIORITY");
     localStorage.setItem(SORT_ORDER_KEY, "desc");
 
+    // Prepare data for review dialog
+    const itemsToImport = [];
+
     results.forEach((item) => {
-      // Fuzzy match
       const bestMatch = findBestMatch(item.foodName, foodNames);
 
-      if (bestMatch) {
-        const foodName = bestMatch.match;
-
-        // Handle Favorite/Worst tags
-        if (item.isFavorite) {
-          setFavoriteFood(foodName);
-          saveGlobalTag(FAVORITE_KEY, foodName);
-        } else if (item.isWorst) {
-          setWorstFood(foodName);
-          saveGlobalTag(WORST_KEY, foodName);
-        } else {
-          // Update status if different
-          if (!userPreferences[foodName] || userPreferences[foodName].status !== item.status) {
-            if (!userPreferences[foodName]) {
-                 userPreferences[foodName] = {};
-            }
-            userPreferences[foodName].status = item.status;
-            userPreferences[foodName].timestamp = Date.now();
-            updatedCount++;
-          }
-        }
-      } else {
-        unknownCount++;
-        if (!unknownFoods.includes(item.foodName)) {
-            unknownFoods.push(item.foodName);
-        }
-      }
+      itemsToImport.push({
+        originalName: item.foodName,
+        matchedName: bestMatch ? bestMatch.match : "",
+        status: item.status || "",
+        isFavorite: item.isFavorite || false,
+        isWorst: item.isWorst || false
+      });
     });
 
-    if (updatedCount > 0) {
-      setUserPreferences(userPreferences);
-      saveUserPreferences();
-      refreshUI();
-    }
-
-    let message = `Successfully updated ${updatedCount} food preferences!`;
-    if (unknownCount > 0) {
-      message += `\n\n${unknownCount} foods from the screenshot were not found in the database (or name mismatch):\n- ${unknownFoods
-        .slice(0, 5)
-        .join("\n- ")}`;
-      if (unknownFoods.length > 5)
-        message += `\n...and ${unknownFoods.length - 5} more.`;
-    }
-
-    alert(message);
-    updateSessionStatus("Screenshot processed successfully.");
+    renderImportDialog(itemsToImport);
+    updateSessionStatus("Waiting for user confirmation...");
   } catch (error) {
     console.error(error);
     alert("Error processing screenshot.");
@@ -153,6 +121,72 @@ export async function handleScreenshotUpload(event) {
   } finally {
     event.target.value = "";
   }
+}
+
+export function confirmImportData() {
+    const dialog = document.getElementById("import-dialog");
+    const rows = document.querySelectorAll("#import-table tbody tr");
+    const userPreferences = getUserPreferences();
+    const foodData = getFoodData();
+    const foodNames = foodData.map(f => f.Food_Name);
+
+    let updatedCount = 0;
+    let unknownCount = 0;
+    let unknownFoods = [];
+
+    // Reset sort
+    setCurrentSortColumn("ORDER_PRIORITY");
+    setCurrentSortOrder("desc");
+    localStorage.setItem(SORT_COLUMN_KEY, "ORDER_PRIORITY");
+    localStorage.setItem(SORT_ORDER_KEY, "desc");
+
+    rows.forEach(row => {
+        const foodName = row.querySelector(".matched-name-input").value.trim();
+        const status = row.querySelector(".status-input").value;
+        const isFavorite = row.querySelector(".favorite-input").checked;
+        const isWorst = row.querySelector(".worst-input").checked;
+
+        // Validation: Check if foodName exists in DB
+        // If exact match isn't in DB, we can't save preferences effectively unless we allow custom items (which we don't for diet calc)
+        // For now, we assume user corrected it to a valid name.
+        const isValid = foodNames.includes(foodName);
+
+        if (isValid) {
+            if (isFavorite) {
+                setFavoriteFood(foodName);
+                saveGlobalTag(FAVORITE_KEY, foodName);
+            } else if (isWorst) {
+                setWorstFood(foodName);
+                saveGlobalTag(WORST_KEY, foodName);
+            } else {
+                if (!userPreferences[foodName] || userPreferences[foodName].status !== status) {
+                    if (!userPreferences[foodName]) userPreferences[foodName] = {};
+                    userPreferences[foodName].status = status;
+                    userPreferences[foodName].timestamp = Date.now();
+                    updatedCount++;
+                }
+            }
+        } else {
+            unknownCount++;
+            unknownFoods.push(foodName);
+        }
+    });
+
+    if (updatedCount > 0) {
+        setUserPreferences(userPreferences);
+        saveUserPreferences();
+        refreshUI();
+    }
+
+    dialog.close();
+
+    let message = `Successfully updated ${updatedCount} food preferences!`;
+    if (unknownCount > 0) {
+        message += `\n\nWarning: ${unknownCount} items were ignored because their names are not in the database:\n- ${unknownFoods.slice(0, 5).join("\n- ")}`;
+    }
+
+    if (updatedCount > 0 || unknownCount > 0) alert(message);
+    updateSessionStatus("Import complete.");
 }
 
 export function refreshUI() {

@@ -184,5 +184,31 @@
             <p>Version 0.5</p>
             <p>Last update: <span id="last-update-date"></span></p>
         </footer>
+
+        <dialog id="import-dialog" class="import-dialog">
+            <div class="dialog-header">
+                <h2>Review Import Data</h2>
+                <p>Please check the text extracted from the screenshot and correct any errors.</p>
+            </div>
+            <div class="dialog-body">
+                <table id="import-table">
+                    <thead>
+                        <tr>
+                            <th>Original Text</th>
+                            <th>Matched Food</th>
+                            <th>Status</th>
+                            <th>Favorite</th>
+                            <th>Worst</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="dialog-footer">
+                <button id="cancel-import" class="button">Cancel</button>
+                <button id="confirm-import" class="button button-primary">Confirm Import</button>
+            </div>
+        </dialog>
     </body>
 </html>

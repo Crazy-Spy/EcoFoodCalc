@@ -399,3 +399,53 @@ export function updateLastCommitDate(dateStr) {
   const dateElement = document.getElementById("last-update-date");
   if (dateElement) dateElement.textContent = dateStr;
 }
+
+export function renderImportDialog(items) {
+    const dialog = document.getElementById("import-dialog");
+    const tbody = document.querySelector("#import-table tbody");
+    if (!dialog || !tbody) return;
+
+    tbody.innerHTML = items.map((item, index) => {
+        // Status Select
+        const statusOptions = STATUS_OPTIONS.filter(s =>
+            s !== FOOD_STATUS_KEYS.SELECT_STATUS &&
+            s !== FOOD_STATUS_KEYS.REMOVE_FROM_LIST
+        ).map(s =>
+            `<option value="${s}" ${s === item.status ? "selected" : ""}>${s}</option>`
+        ).join("");
+
+        const matchedName = item.matchedName || item.originalName;
+        const noMatchStyle = !item.matchedName ? "color: red; font-weight: bold;" : "";
+
+        return `
+            <tr data-index="${index}">
+                <td>${item.originalName}</td>
+                <td style="${noMatchStyle}">
+                    <input type="text" class="matched-name-input" value="${matchedName}" />
+                </td>
+                <td>
+                    <select class="status-input">
+                        ${statusOptions}
+                    </select>
+                </td>
+                <td>
+                    <input type="checkbox" class="favorite-input" ${item.isFavorite ? "checked" : ""} />
+                </td>
+                <td>
+                    <input type="checkbox" class="worst-input" ${item.isWorst ? "checked" : ""} />
+                </td>
+                <td>
+                    <button class="button button-danger delete-row-btn" onclick="this.closest('tr').remove()">
+                        <i class="ph ph-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+
+    dialog.showModal();
+
+    // Bind footer buttons
+    document.getElementById("cancel-import").onclick = () => dialog.close();
+    document.getElementById("confirm-import").onclick = () => window.confirmImportData(); // We will define this globally in main.js or bind it differently
+}

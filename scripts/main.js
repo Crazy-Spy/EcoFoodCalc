@@ -9,7 +9,8 @@ import {
     removeItemFromPreferences,
     addFoodToEvaluatedList,
     handleFilterChange,
-    handleScreenshotUpload
+    handleScreenshotUpload,
+    confirmImportData
 } from './controller.js';
 
 import {
@@ -35,5 +36,6 @@ window.sortTable = sortTable;
 window.updateFoodStatus = updateFoodStatus;
 window.removeItemFromPreferences = removeItemFromPreferences;
 window.handleScreenshotUpload = handleScreenshotUpload;
+window.confirmImportData = confirmImportData;
 
 document.addEventListener("DOMContentLoaded", initApp);
