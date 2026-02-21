@@ -180,6 +180,9 @@ namespace Eco.Mods.TechTree
                     case "export":
                         ExportTasteList(user);
                         break;
+                    case "help":
+                        ShowHelp(user);
+                        break;
                     default:
                         if (arg.StartsWith("config "))
                         {
@@ -196,7 +199,7 @@ namespace Eco.Mods.TechTree
                         }
                         else
                         {
-                            user.Player.MsgLocStr("Usage: /diet [meals | clear | debug | strict | config <minutes> | taste | export]");
+                            user.Player.MsgLocStr("Usage: /diet [meals | clear | debug | strict | config <minutes> | taste | export | help]");
                         }
                         break;
                 }
@@ -206,6 +209,25 @@ namespace Eco.Mods.TechTree
                 user.Player.MsgLocStr($"Error: {ex.Message}");
                 Log($"Error in SuggestDiet: {ex}");
             }
+        }
+
+        private static void ShowHelp(User user)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("<b>Eco Diet Optimizer</b>");
+            sb.AppendLine("This mod helps you maximize your skill gain by suggesting the best balanced diet based on your stomach size and known food preferences. It prioritizes balanced nutrition (25% each of Carbs, Fat, Protein, Vitamins).");
+            sb.AppendLine();
+            sb.AppendLine("<b>Commands:</b>");
+            sb.AppendLine("- <b>/diet</b>: Suggests the best balanced diet for 1 meal.");
+            sb.AppendLine("- <b>/diet &lt;N&gt;</b>: Generates a shopping list for N meals based on the current suggestion.");
+            sb.AppendLine("- <b>/diet taste</b>: Lists your discovered foods grouped by taste preference.");
+            sb.AppendLine("- <b>/diet export</b>: Saves your taste profile to a text file in the 'DietExports' folder.");
+            sb.AppendLine("- <b>/diet clear</b>: Clears the currently cached diet suggestion, forcing a recalculation.");
+            sb.AppendLine("- <b>/diet strict</b>: Toggles strict discovery mode (hides potentially undiscovered items).");
+            sb.AppendLine("- <b>/diet config &lt;minutes&gt;</b>: Sets the cooldown period for diet recalculation.");
+            sb.AppendLine("- <b>/diet debug</b>: Toggles verbose logging to 'EcoDietOptimizer_Log.txt'.");
+
+            user.Player.MsgLocStr(sb.ToString());
         }
 
         private static string GenerateTasteListString(User user, bool richText)
@@ -286,11 +308,22 @@ namespace Eco.Mods.TechTree
         {
             string result = GenerateTasteListString(user, false); // Plain text for file
             string cleanName = new string(user.Name.Where(char.IsLetterOrDigit).ToArray());
+
+            // Create specific export folder to be organized
+            string exportFolder = Path.Combine("DietExports");
+            if (!Directory.Exists(exportFolder))
+            {
+                try { Directory.CreateDirectory(exportFolder); } catch {}
+            }
+
             string filename = $"EcoDietExport_{cleanName}.txt";
+            string fullPath = Path.Combine(exportFolder, filename);
+            string absolutePath = Path.GetFullPath(fullPath);
+
             try
             {
-                File.WriteAllText(filename, result);
-                user.Player.MsgLocStr($"Exported taste data to {filename}");
+                File.WriteAllText(fullPath, result);
+                user.Player.MsgLocStr($"Exported taste data to: {absolutePath}");
             }
             catch (Exception ex)
             {
@@ -391,6 +424,7 @@ namespace Eco.Mods.TechTree
 
             if (tasteApiFailed)
             {
+                 // Fallback to old discovery logic if TasteBuds fails completely
                  user.Player.MsgLocStr("Warning: Taste API unavailable. Falling back to basic discovery check.");
                  IEnumerable<FoodItem> allFoods = null;
                  try
@@ -553,7 +587,6 @@ namespace Eco.Mods.TechTree
             sb.AppendLine("<b>Eat (Per Meal):</b>");
             foreach(var kvp in plan.Foods)
             {
-                // Key is already UILink from AnalyzeDiet
                 sb.AppendLine($"- {kvp.Key}: {kvp.Value}");
             }
 
