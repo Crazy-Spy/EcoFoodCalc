@@ -1,4 +1,4 @@
-export const FOOD_SOURCE_URL = "new-foodsource.json";
+export const FOOD_SOURCE_URL = "foodsource.json";
 
 // --- VERSION CONTROL ---
 export const CURRENT_VERSION = "0.5"; // Versão que introduziu os nomes com espaços

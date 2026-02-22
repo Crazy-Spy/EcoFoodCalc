@@ -6,7 +6,8 @@
         "Protein": 5,
         "Vitamins": 5,
         "Official_Calories_Game": 40,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 5
     },
     {
         "Food_Name": "Agave Leaves",
@@ -15,7 +16,8 @@
         "Protein": 1,
         "Vitamins": 4,
         "Official_Calories_Game": 200,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Agouti Enchiladas",
@@ -24,7 +26,8 @@
         "Protein": 8,
         "Vitamins": 3,
         "Official_Calories_Game": 800,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 4
     },
     {
         "Food_Name": "Autumn Stew",
@@ -33,7 +36,8 @@
         "Protein": 8,
         "Vitamins": 12,
         "Official_Calories_Game": 1200,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 2
     },
     {
         "Food_Name": "Baked Agave",
@@ -42,7 +46,8 @@
         "Protein": 2,
         "Vitamins": 8,
         "Official_Calories_Game": 700,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 1
     },
     {
         "Food_Name": "Baked Beet",
@@ -51,7 +56,8 @@
         "Protein": 1,
         "Vitamins": 15,
         "Official_Calories_Game": 700,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 1
     },
     {
         "Food_Name": "Baked Corn",
@@ -60,7 +66,8 @@
         "Protein": 3,
         "Vitamins": 11,
         "Official_Calories_Game": 700,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 1
     },
     {
         "Food_Name": "Baked Heart Of Palm",
@@ -69,7 +76,8 @@
         "Protein": 6,
         "Vitamins": 6,
         "Official_Calories_Game": 700,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 1
     },
     {
         "Food_Name": "Baked Meat",
@@ -78,7 +86,8 @@
         "Protein": 17,
         "Vitamins": 0,
         "Official_Calories_Game": 700,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 1
     },
     {
         "Food_Name": "Baked Roast",
@@ -87,7 +96,8 @@
         "Protein": 16,
         "Vitamins": 4,
         "Official_Calories_Game": 1000,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 3
     },
     {
         "Food_Name": "Baked Taro",
@@ -96,7 +106,8 @@
         "Protein": 6,
         "Vitamins": 12,
         "Official_Calories_Game": 700,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 1
     },
     {
         "Food_Name": "Baked Tomato",
@@ -105,7 +116,8 @@
         "Protein": 1,
         "Vitamins": 6,
         "Official_Calories_Game": 700,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 1
     },
     {
         "Food_Name": "Banh Xeo",
@@ -114,7 +126,8 @@
         "Protein": 17,
         "Vitamins": 4,
         "Official_Calories_Game": 1550,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 4
     },
     {
         "Food_Name": "Bannock",
@@ -123,7 +136,8 @@
         "Protein": 3,
         "Vitamins": 0,
         "Official_Calories_Game": 700,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 2
     },
     {
         "Food_Name": "Basic Salad",
@@ -132,7 +146,8 @@
         "Protein": 6,
         "Vitamins": 10,
         "Official_Calories_Game": 800,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Bean Paste",
@@ -141,7 +156,8 @@
         "Protein": 5,
         "Vitamins": 0,
         "Official_Calories_Game": 40,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 3
     },
     {
         "Food_Name": "Bean Sprout",
@@ -150,7 +166,8 @@
         "Protein": 1,
         "Vitamins": 5,
         "Official_Calories_Game": 100,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 1
     },
     {
         "Food_Name": "Bearclaw",
@@ -159,7 +176,8 @@
         "Protein": 4,
         "Vitamins": 7,
         "Official_Calories_Game": 850,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 2
     },
     {
         "Food_Name": "Bear S U P R E M E",
@@ -168,7 +186,8 @@
         "Protein": 22,
         "Vitamins": 9,
         "Official_Calories_Game": 1250,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 6
     },
     {
         "Food_Name": "Beet",
@@ -177,7 +196,8 @@
         "Protein": 0,
         "Vitamins": 4,
         "Official_Calories_Game": 230,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Beet Campfire Salad",
@@ -186,7 +206,8 @@
         "Protein": 4,
         "Vitamins": 13,
         "Official_Calories_Game": 900,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 1
     },
     {
         "Food_Name": "Beet Greens",
@@ -195,7 +216,8 @@
         "Protein": 1,
         "Vitamins": 4,
         "Official_Calories_Game": 100,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Bison Chow Fun",
@@ -204,7 +226,8 @@
         "Protein": 13,
         "Vitamins": 8,
         "Official_Calories_Game": 1450,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 4
     },
     {
         "Food_Name": "Boiled Grains",
@@ -213,7 +236,8 @@
         "Protein": 2,
         "Vitamins": 1,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Boiled Rice",
@@ -222,7 +246,8 @@
         "Protein": 2,
         "Vitamins": 0,
         "Official_Calories_Game": 210,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 1
     },
     {
         "Food_Name": "Boiled Sausage",
@@ -231,7 +256,8 @@
         "Protein": 27,
         "Vitamins": 0,
         "Official_Calories_Game": 600,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 2
     },
     {
         "Food_Name": "Bolete Mushrooms",
@@ -240,7 +266,8 @@
         "Protein": 4,
         "Vitamins": 1,
         "Official_Calories_Game": 200,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Bread",
@@ -249,7 +276,8 @@
         "Protein": 6,
         "Vitamins": 2,
         "Official_Calories_Game": 750,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 4
     },
     {
         "Food_Name": "Camas Bread",
@@ -258,7 +286,8 @@
         "Protein": 5,
         "Vitamins": 7,
         "Official_Calories_Game": 800,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 5
     },
     {
         "Food_Name": "Camas Bulb Bake",
@@ -267,7 +296,8 @@
         "Protein": 7,
         "Vitamins": 4,
         "Official_Calories_Game": 700,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 1
     },
     {
         "Food_Name": "Camas Paste",
@@ -276,7 +306,8 @@
         "Protein": 2,
         "Vitamins": 0,
         "Official_Calories_Game": 60,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 2
     },
     {
         "Food_Name": "Campfire Roast",
@@ -285,7 +316,8 @@
         "Protein": 16,
         "Vitamins": 0,
         "Official_Calories_Game": 1000,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 2
     },
     {
         "Food_Name": "Campfire Stew",
@@ -294,7 +326,8 @@
         "Protein": 10,
         "Vitamins": 4,
         "Official_Calories_Game": 1200,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Cereal Germ",
@@ -303,7 +336,8 @@
         "Protein": 0,
         "Vitamins": 3,
         "Official_Calories_Game": 20,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Agave",
@@ -312,7 +346,8 @@
         "Protein": 1,
         "Vitamins": 3,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Beans",
@@ -321,7 +356,8 @@
         "Protein": 8,
         "Vitamins": 0,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Beet",
@@ -330,7 +366,8 @@
         "Protein": 0,
         "Vitamins": 6,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Cactus Fruit",
@@ -339,7 +376,8 @@
         "Protein": 0,
         "Vitamins": 6,
         "Official_Calories_Game": 200,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Camas Bulb",
@@ -348,7 +386,8 @@
         "Protein": 3,
         "Vitamins": 1,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Corn",
@@ -357,7 +396,8 @@
         "Protein": 1,
         "Vitamins": 4,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Fireweed Shoots",
@@ -366,7 +406,8 @@
         "Protein": 1,
         "Vitamins": 6,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Fish",
@@ -375,7 +416,8 @@
         "Protein": 11,
         "Vitamins": 0,
         "Official_Calories_Game": 400,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Heart Of Palm",
@@ -384,7 +426,8 @@
         "Protein": 3,
         "Vitamins": 2,
         "Official_Calories_Game": 210,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Meat",
@@ -393,7 +436,8 @@
         "Protein": 5,
         "Vitamins": 0,
         "Official_Calories_Game": 400,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Mushrooms",
@@ -402,7 +446,8 @@
         "Protein": 6,
         "Vitamins": 1,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Papaya",
@@ -411,7 +456,8 @@
         "Protein": 1,
         "Vitamins": 8,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Pineapple",
@@ -420,7 +466,8 @@
         "Protein": 1,
         "Vitamins": 3,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Sausage",
@@ -429,7 +476,8 @@
         "Protein": 10,
         "Vitamins": 0,
         "Official_Calories_Game": 700,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 1
     },
     {
         "Food_Name": "Charred Taro",
@@ -438,7 +486,8 @@
         "Protein": 1,
         "Vitamins": 1,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Charred Tomato",
@@ -447,7 +496,8 @@
         "Protein": 1,
         "Vitamins": 4,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Clam Chowder",
@@ -456,7 +506,8 @@
         "Protein": 15,
         "Vitamins": 11,
         "Official_Calories_Game": 800,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 5
     },
     {
         "Food_Name": "Cookeina Mushrooms",
@@ -465,7 +516,8 @@
         "Protein": 4,
         "Vitamins": 1,
         "Official_Calories_Game": 200,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Corn",
@@ -474,7 +526,8 @@
         "Protein": 1,
         "Vitamins": 3,
         "Official_Calories_Game": 230,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Corn Fritters",
@@ -483,7 +536,8 @@
         "Protein": 4,
         "Vitamins": 8,
         "Official_Calories_Game": 500,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 1
     },
     {
         "Food_Name": "Cornmeal",
@@ -492,7 +546,8 @@
         "Protein": 3,
         "Vitamins": 0,
         "Official_Calories_Game": 60,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 1
     },
     {
         "Food_Name": "Corn Starch",
@@ -501,7 +556,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 10,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Crimini Mushrooms",
@@ -510,7 +566,8 @@
         "Protein": 4,
         "Vitamins": 1,
         "Official_Calories_Game": 200,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Crimson Salad",
@@ -519,7 +576,8 @@
         "Protein": 7,
         "Vitamins": 28,
         "Official_Calories_Game": 1200,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 3
     },
     {
         "Food_Name": "Crispy Bacon",
@@ -528,7 +586,8 @@
         "Protein": 18,
         "Vitamins": 0,
         "Official_Calories_Game": 800,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 3
     },
     {
         "Food_Name": "Dried Fish",
@@ -537,7 +596,8 @@
         "Protein": 16,
         "Vitamins": 0,
         "Official_Calories_Game": 450,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Dried Meat",
@@ -546,7 +606,8 @@
         "Protein": 14,
         "Vitamins": 0,
         "Official_Calories_Game": 550,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Ecoylent",
@@ -555,7 +616,8 @@
         "Protein": 500,
         "Vitamins": 500,
         "Official_Calories_Game": 1500,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Elk Taco",
@@ -564,7 +626,8 @@
         "Protein": 8,
         "Vitamins": 6,
         "Official_Calories_Game": 700,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 2
     },
     {
         "Food_Name": "Elk Wellington",
@@ -573,7 +636,8 @@
         "Protein": 26,
         "Vitamins": 4,
         "Official_Calories_Game": 1450,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 6
     },
     {
         "Food_Name": "Fantastic Forest Pizza",
@@ -582,7 +646,8 @@
         "Protein": 4,
         "Vitamins": 17,
         "Official_Calories_Game": 1250,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 3
     },
     {
         "Food_Name": "Fern Campfire Salad",
@@ -591,7 +656,8 @@
         "Protein": 5,
         "Vitamins": 13,
         "Official_Calories_Game": 900,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 1
     },
     {
         "Food_Name": "Fiddleheads",
@@ -600,7 +666,8 @@
         "Protein": 1,
         "Vitamins": 5,
         "Official_Calories_Game": 150,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Field Campfire Stew",
@@ -609,7 +676,8 @@
         "Protein": 4,
         "Vitamins": 4,
         "Official_Calories_Game": 1100,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 4
     },
     {
         "Food_Name": "Fireweed Shoots",
@@ -618,7 +686,8 @@
         "Protein": 1,
         "Vitamins": 4,
         "Official_Calories_Game": 150,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Fish N Chips",
@@ -627,7 +696,8 @@
         "Protein": 10,
         "Vitamins": 0,
         "Official_Calories_Game": 1000,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 1
     },
     {
         "Food_Name": "Flatbread",
@@ -636,7 +706,8 @@
         "Protein": 8,
         "Vitamins": 2,
         "Official_Calories_Game": 500,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 1
     },
     {
         "Food_Name": "Flaxseed Oil",
@@ -645,7 +716,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 120,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 3
     },
     {
         "Food_Name": "Flour",
@@ -654,7 +726,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 50,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 1
     },
     {
         "Food_Name": "Fried Camas",
@@ -663,7 +736,8 @@
         "Protein": 3,
         "Vitamins": 2,
         "Official_Calories_Game": 700,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 2
     },
     {
         "Food_Name": "Fried Fiddleheads",
@@ -672,7 +746,8 @@
         "Protein": 3,
         "Vitamins": 4,
         "Official_Calories_Game": 700,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 2
     },
     {
         "Food_Name": "Fried Hare Haunches",
@@ -681,7 +756,8 @@
         "Protein": 15,
         "Vitamins": 4,
         "Official_Calories_Game": 750,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 2
     },
     {
         "Food_Name": "Fried Hearts Of Palm",
@@ -690,7 +766,8 @@
         "Protein": 3,
         "Vitamins": 2,
         "Official_Calories_Game": 700,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 2
     },
     {
         "Food_Name": "Fried Taro",
@@ -699,7 +776,8 @@
         "Protein": 1,
         "Vitamins": 1,
         "Official_Calories_Game": 700,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 2
     },
     {
         "Food_Name": "Fried Tomatoes",
@@ -708,7 +786,8 @@
         "Protein": 3,
         "Vitamins": 2,
         "Official_Calories_Game": 700,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 2
     },
     {
         "Food_Name": "Fried Vegetables",
@@ -717,7 +796,8 @@
         "Protein": 3,
         "Vitamins": 2,
         "Official_Calories_Game": 560,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Fruit Muffin",
@@ -726,7 +806,8 @@
         "Protein": 5,
         "Vitamins": 16,
         "Official_Calories_Game": 800,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 2
     },
     {
         "Food_Name": "Fruit Salad",
@@ -735,7 +816,8 @@
         "Protein": 4,
         "Vitamins": 19,
         "Official_Calories_Game": 900,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Fruit Tart",
@@ -744,7 +826,8 @@
         "Protein": 3,
         "Vitamins": 14,
         "Official_Calories_Game": 800,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 1
     },
     {
         "Food_Name": "Giant Cactus Fruit",
@@ -753,7 +836,8 @@
         "Protein": 0,
         "Vitamins": 4,
         "Official_Calories_Game": 100,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Heart Of Palm",
@@ -762,7 +846,8 @@
         "Protein": 2,
         "Vitamins": 2,
         "Official_Calories_Game": 100,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Hearty Hometown Pizza",
@@ -771,7 +856,8 @@
         "Protein": 7,
         "Vitamins": 3,
         "Official_Calories_Game": 1200,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 3
     },
     {
         "Food_Name": "Hosomaki",
@@ -780,7 +866,8 @@
         "Protein": 19,
         "Vitamins": 8,
         "Official_Calories_Game": 700,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 3
     },
     {
         "Food_Name": "Huckleberries",
@@ -789,7 +876,8 @@
         "Protein": 0,
         "Vitamins": 6,
         "Official_Calories_Game": 150,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Huckleberry Extract",
@@ -798,7 +886,8 @@
         "Protein": 0,
         "Vitamins": 15,
         "Official_Calories_Game": 60,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 2
     },
     {
         "Food_Name": "Huckleberry Fritter",
@@ -807,7 +896,8 @@
         "Protein": 0,
         "Vitamins": 8,
         "Official_Calories_Game": 900,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 5
     },
     {
         "Food_Name": "Huckleberry Pie",
@@ -816,7 +906,8 @@
         "Protein": 5,
         "Vitamins": 16,
         "Official_Calories_Game": 1300,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 5
     },
     {
         "Food_Name": "Hydrocolloids",
@@ -825,7 +916,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 10,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Infused Oil",
@@ -834,7 +926,8 @@
         "Protein": 0,
         "Vitamins": 3,
         "Official_Calories_Game": 120,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 1
     },
     {
         "Food_Name": "Jungle Campfire Salad",
@@ -843,7 +936,8 @@
         "Protein": 4,
         "Vitamins": 10,
         "Official_Calories_Game": 900,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 1
     },
     {
         "Food_Name": "Jungle Campfire Stew",
@@ -852,7 +946,8 @@
         "Protein": 8,
         "Vitamins": 3,
         "Official_Calories_Game": 1100,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 4
     },
     {
         "Food_Name": "Kelpy Crab Roll",
@@ -861,7 +956,8 @@
         "Protein": 13,
         "Vitamins": 5,
         "Official_Calories_Game": 1350,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 3
     },
     {
         "Food_Name": "Leavened Dough",
@@ -870,7 +966,8 @@
         "Protein": 18,
         "Vitamins": 5,
         "Official_Calories_Game": 10,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 1
     },
     {
         "Food_Name": "Liquid Nitrogen",
@@ -879,7 +976,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 10,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Loaded Taro Fries",
@@ -888,7 +986,8 @@
         "Protein": 6,
         "Vitamins": 0,
         "Official_Calories_Game": 1200,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 5
     },
     {
         "Food_Name": "Macarons",
@@ -897,7 +996,8 @@
         "Protein": 7,
         "Vitamins": 16,
         "Official_Calories_Game": 1000,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 5
     },
     {
         "Food_Name": "Maltodextrin",
@@ -906,7 +1006,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 10,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Meat Pie",
@@ -915,7 +1016,8 @@
         "Protein": 4,
         "Vitamins": 2,
         "Official_Calories_Game": 1300,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 5
     },
     {
         "Food_Name": "Meat Stock",
@@ -924,7 +1026,8 @@
         "Protein": 8,
         "Vitamins": 0,
         "Official_Calories_Game": 600,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 2
     },
     {
         "Food_Name": "Meaty Stew",
@@ -933,7 +1036,8 @@
         "Protein": 13,
         "Vitamins": 1,
         "Official_Calories_Game": 1100,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 3
     },
     {
         "Food_Name": "Milk",
@@ -942,7 +1046,8 @@
         "Protein": 10,
         "Vitamins": 0,
         "Official_Calories_Game": 120,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Millionaires Salad",
@@ -951,7 +1056,8 @@
         "Protein": 6,
         "Vitamins": 26,
         "Official_Calories_Game": 1000,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 6
     },
     {
         "Food_Name": "Mochi",
@@ -960,7 +1066,8 @@
         "Protein": 0,
         "Vitamins": 5,
         "Official_Calories_Game": 750,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 4
     },
     {
         "Food_Name": "Oil",
@@ -969,7 +1076,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 120,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 1
     },
     {
         "Food_Name": "Papaya",
@@ -978,7 +1086,8 @@
         "Protein": 1,
         "Vitamins": 5,
         "Official_Calories_Game": 200,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Pastry Dough",
@@ -987,7 +1096,8 @@
         "Protein": 0,
         "Vitamins": 4,
         "Official_Calories_Game": 10,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 1
     },
     {
         "Food_Name": "Phad Thai",
@@ -996,7 +1106,8 @@
         "Protein": 11,
         "Vitamins": 5,
         "Official_Calories_Game": 1200,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 6
     },
     {
         "Food_Name": "Pineapple",
@@ -1005,7 +1116,8 @@
         "Protein": 0,
         "Vitamins": 2,
         "Official_Calories_Game": 200,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Pineapple Friend Rice",
@@ -1014,7 +1126,8 @@
         "Protein": 9,
         "Vitamins": 12,
         "Official_Calories_Game": 720,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 5
     },
     {
         "Food_Name": "Pirozhok",
@@ -1023,7 +1136,8 @@
         "Protein": 19,
         "Vitamins": 4,
         "Official_Calories_Game": 850,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 1
     },
     {
         "Food_Name": "Poke Bowl",
@@ -1032,7 +1146,8 @@
         "Protein": 10,
         "Vitamins": 7,
         "Official_Calories_Game": 1100,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 4
     },
     {
         "Food_Name": "Prepared Meat",
@@ -1041,7 +1156,8 @@
         "Protein": 4,
         "Vitamins": 0,
         "Official_Calories_Game": 600,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 4
     },
     {
         "Food_Name": "Prickly Pear Fruit",
@@ -1050,7 +1166,8 @@
         "Protein": 1,
         "Vitamins": 4,
         "Official_Calories_Game": 190,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Prime Cut",
@@ -1059,7 +1176,8 @@
         "Protein": 9,
         "Vitamins": 0,
         "Official_Calories_Game": 600,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 6
     },
     {
         "Food_Name": "Pumpkin",
@@ -1068,7 +1186,8 @@
         "Protein": 1,
         "Vitamins": 2,
         "Official_Calories_Game": 340,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Pupusas",
@@ -1077,7 +1196,8 @@
         "Protein": 11,
         "Vitamins": 14,
         "Official_Calories_Game": 900,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 4
     },
     {
         "Food_Name": "Raw Bacon",
@@ -1086,7 +1206,8 @@
         "Protein": 3,
         "Vitamins": 0,
         "Official_Calories_Game": 200,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 3
     },
     {
         "Food_Name": "Raw Fish",
@@ -1095,7 +1216,8 @@
         "Protein": 7,
         "Vitamins": 0,
         "Official_Calories_Game": 200,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Raw Meat",
@@ -1104,7 +1226,8 @@
         "Protein": 4,
         "Vitamins": 0,
         "Official_Calories_Game": 250,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Raw Roast",
@@ -1113,7 +1236,8 @@
         "Protein": 6,
         "Vitamins": 0,
         "Official_Calories_Game": 600,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 3
     },
     {
         "Food_Name": "Raw Sausage",
@@ -1122,7 +1246,8 @@
         "Protein": 4,
         "Vitamins": 0,
         "Official_Calories_Game": 500,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 2
     },
     {
         "Food_Name": "Rice Flour",
@@ -1131,7 +1256,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 50,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 1
     },
     {
         "Food_Name": "Rice Noodles",
@@ -1140,7 +1266,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 200,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 1
     },
     {
         "Food_Name": "Roast Pumpkin",
@@ -1149,7 +1276,8 @@
         "Protein": 2,
         "Vitamins": 7,
         "Official_Calories_Game": 1400,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 3
     },
     {
         "Food_Name": "Root Campfire Salad",
@@ -1158,7 +1286,8 @@
         "Protein": 5,
         "Vitamins": 11,
         "Official_Calories_Game": 950,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 1
     },
     {
         "Food_Name": "Root Campfire Stew",
@@ -1167,7 +1296,8 @@
         "Protein": 5,
         "Vitamins": 5,
         "Official_Calories_Game": 1100,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 4
     },
     {
         "Food_Name": "Scrap Meat",
@@ -1176,7 +1306,8 @@
         "Protein": 5,
         "Vitamins": 0,
         "Official_Calories_Game": 50,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 1
     },
     {
         "Food_Name": "Seared Meat",
@@ -1185,7 +1316,8 @@
         "Protein": 19,
         "Vitamins": 7,
         "Official_Calories_Game": 600,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 1
     },
     {
         "Food_Name": "Seeded Camas Roll",
@@ -1194,7 +1326,8 @@
         "Protein": 2,
         "Vitamins": 16,
         "Official_Calories_Game": 1400,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 3
     },
     {
         "Food_Name": "Sensuous Sea Pizza",
@@ -1203,7 +1336,8 @@
         "Protein": 11,
         "Vitamins": 4,
         "Official_Calories_Game": 1200,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 3
     },
     {
         "Food_Name": "Shark Fillet Soup",
@@ -1212,7 +1346,8 @@
         "Protein": 15,
         "Vitamins": 4,
         "Official_Calories_Game": 1400,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 2
     },
     {
         "Food_Name": "Simmered Meat",
@@ -1221,7 +1356,8 @@
         "Protein": 18,
         "Vitamins": 5,
         "Official_Calories_Game": 900,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 2
     },
     {
         "Food_Name": "Simple Syrup",
@@ -1230,7 +1366,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 400,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 2
     },
     {
         "Food_Name": "Smooth Gut Noodle Roll",
@@ -1239,7 +1376,8 @@
         "Protein": 15,
         "Vitamins": 1,
         "Official_Calories_Game": 1200,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 4
     },
     {
         "Food_Name": "Spiky Roll",
@@ -1248,7 +1386,8 @@
         "Protein": 17,
         "Vitamins": 2,
         "Official_Calories_Game": 1300,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 3
     },
     {
         "Food_Name": "Stuffed Turkey",
@@ -1257,7 +1396,8 @@
         "Protein": 24,
         "Vitamins": 7,
         "Official_Calories_Game": 1600,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 4
     },
     {
         "Food_Name": "Sugar",
@@ -1266,7 +1406,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 50,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 1
     },
     {
         "Food_Name": "Sun Cheese",
@@ -1275,7 +1416,8 @@
         "Protein": 4,
         "Vitamins": 0,
         "Official_Calories_Game": 250,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 3
     },
     {
         "Food_Name": "Sunflower",
@@ -1284,7 +1426,8 @@
         "Protein": 2,
         "Vitamins": 0,
         "Official_Calories_Game": 50,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Sweet Deer Jerky",
@@ -1293,7 +1436,8 @@
         "Protein": 22,
         "Vitamins": 3,
         "Official_Calories_Game": 600,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Sweet Salad",
@@ -1302,7 +1446,8 @@
         "Protein": 9,
         "Vitamins": 22,
         "Official_Calories_Game": 1200,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 3
     },
     {
         "Food_Name": "Tallow",
@@ -1311,7 +1456,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 200,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Taro Fries",
@@ -1320,7 +1466,8 @@
         "Protein": 2,
         "Vitamins": 0,
         "Official_Calories_Game": 600,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 3
     },
     {
         "Food_Name": "Taro Root",
@@ -1329,7 +1476,8 @@
         "Protein": 1,
         "Vitamins": 1,
         "Official_Calories_Game": 250,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Tasty Tropical Pizza",
@@ -1338,7 +1486,8 @@
         "Protein": 6,
         "Vitamins": 11,
         "Official_Calories_Game": 1200,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 3
     },
     {
         "Food_Name": "Tomato",
@@ -1347,7 +1496,8 @@
         "Protein": 1,
         "Vitamins": 2,
         "Official_Calories_Game": 240,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Topped Porridge",
@@ -1356,7 +1506,8 @@
         "Protein": 4,
         "Vitamins": 10,
         "Official_Calories_Game": 700,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 1
     },
     {
         "Food_Name": "Tortilla",
@@ -1365,7 +1516,8 @@
         "Protein": 10,
         "Vitamins": 0,
         "Official_Calories_Game": 350,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 2
     },
     {
         "Food_Name": "Transglutaminase",
@@ -1374,7 +1526,8 @@
         "Protein": 0,
         "Vitamins": 0,
         "Official_Calories_Game": 10,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Vegetable Medley",
@@ -1383,7 +1536,8 @@
         "Protein": 4,
         "Vitamins": 17,
         "Official_Calories_Game": 900,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Vegetable Soup",
@@ -1392,7 +1546,8 @@
         "Protein": 4,
         "Vitamins": 19,
         "Official_Calories_Game": 1200,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 3
     },
     {
         "Food_Name": "Vegetable Stock",
@@ -1401,7 +1556,8 @@
         "Protein": 1,
         "Vitamins": 11,
         "Official_Calories_Game": 700,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 3
     },
     {
         "Food_Name": "Wheat",
@@ -1410,7 +1566,8 @@
         "Protein": 2,
         "Vitamins": 0,
         "Official_Calories_Game": 150,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 0
     },
     {
         "Food_Name": "Wild Mix",
@@ -1419,7 +1576,8 @@
         "Protein": 6,
         "Vitamins": 21,
         "Official_Calories_Game": 800,
-        "Tier": 3
+        "Tier": 3,
+        "Level": 1
     },
     {
         "Food_Name": "Wild Stew",
@@ -1428,7 +1586,8 @@
         "Protein": 2,
         "Vitamins": 12,
         "Official_Calories_Game": 1100,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 6
     },
     {
         "Food_Name": "Wilted Fiddleheads",
@@ -1437,7 +1596,8 @@
         "Protein": 1,
         "Vitamins": 7,
         "Official_Calories_Game": 350,
-        "Tier": 1
+        "Tier": 1,
+        "Level": 0
     },
     {
         "Food_Name": "Worldly Donut",
@@ -1446,7 +1606,8 @@
         "Protein": 2,
         "Vitamins": 2,
         "Official_Calories_Game": 750,
-        "Tier": 2
+        "Tier": 2,
+        "Level": 4
     },
     {
         "Food_Name": "Yeast",
@@ -1455,6 +1616,7 @@
         "Protein": 8,
         "Vitamins": 7,
         "Official_Calories_Game": 60,
-        "Tier": 0
+        "Tier": 0,
+        "Level": 4
     }
 ]

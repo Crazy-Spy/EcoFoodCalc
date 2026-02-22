@@ -2,8 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 const FOOD_DIR = './Food';
-const JSON_FILE = './new-foodsource.json';
-const JSON_FILE_BACKUP = './foodsource.json'; // Also update the original just in case
+const JSON_FILE = './foodsource.json';
 
 // Tier Mapping
 const SKILL_TIERS = {
@@ -15,16 +14,24 @@ const SKILL_TIERS = {
     'CampfireCookingSkill': 1
 };
 
-function getTierFromContent(content) {
-    const skillMatch = content.match(/\[RequiresSkill\(typeof\(([^)]+)\)/);
-    if (skillMatch) {
-        const skillName = skillMatch[1].trim();
+function getSkillData(content) {
+    // Looks for: [RequiresSkill(typeof(SkillName), Level)]
+    // Regex: \[RequiresSkill\(typeof\(([^)]+)\),\s*(\d+)\)\]
+    const regex = /\[RequiresSkill\(typeof\(([^)]+)\),\s*(\d+)\)\]/;
+    const match = content.match(regex);
+
+    if (match) {
+        const skillName = match[1].trim();
+        const level = parseInt(match[2], 10);
+
         // Handle cases where the skill name might be fully qualified or just the class name
-        // We just need the last part if it has dots, but typically it's just the class name in these files
         const simpleSkillName = skillName.split('.').pop();
-        return SKILL_TIERS[simpleSkillName] || 0; // Default to 0 if skill is found but not in our list (shouldn't happen for these tiers, but safe)
+        const tier = SKILL_TIERS[simpleSkillName] || 0;
+
+        return { tier, level };
     }
-    return 0; // No skill requirement found -> Tier 0
+
+    return { tier: 0, level: 0 }; // Default if not found
 }
 
 function getNameFromContent(content) {
@@ -47,9 +54,9 @@ function updateFoodData() {
         const content = fs.readFileSync(path.join(FOOD_DIR, file), 'utf-8');
         const name = getNameFromContent(content);
         if (name) {
-            const tier = getTierFromContent(content);
-            foodMap.set(name, tier);
-            // console.log(`Found: ${name} -> Tier ${tier}`);
+            const data = getSkillData(content);
+            foodMap.set(name, data);
+            // console.log(`Found: ${name} -> Tier ${data.tier}, Level ${data.level}`);
         }
     });
 
@@ -73,23 +80,21 @@ function updateFoodData() {
     // Update JSON
     let updatedCount = 0;
     foodData.forEach(item => {
-        const tier = foodMap.get(item.Food_Name);
-        if (tier !== undefined) {
-            item.Tier = tier;
+        const data = foodMap.get(item.Food_Name);
+        if (data) {
+            item.Tier = data.tier;
+            item.Level = data.level; // Store level too
             updatedCount++;
         } else {
-            console.warn(`Warning: No C# file found for "${item.Food_Name}". Setting Tier to 0.`);
+            console.warn(`Warning: No C# file found for "${item.Food_Name}". Setting Tier/Level to 0.`);
             item.Tier = 0;
+            item.Level = 0;
         }
     });
 
     // Write back to JSON
     fs.writeFileSync(JSON_FILE, JSON.stringify(foodData, null, 4), 'utf-8');
     console.log(`Updated ${updatedCount} items in ${JSON_FILE}.`);
-
-    // Sync backup
-    fs.writeFileSync(JSON_FILE_BACKUP, JSON.stringify(foodData, null, 4), 'utf-8');
-    console.log(`Synced changes to ${JSON_FILE_BACKUP}.`);
 }
 
 updateFoodData();

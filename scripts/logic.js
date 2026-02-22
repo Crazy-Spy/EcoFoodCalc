@@ -63,14 +63,10 @@ export function getSuggestedDiets() {
     return { error: "NO_SUITABLE_FOODS" };
   }
 
-  // Step 2: Prioritize by Tier
-  // Find the highest available Tier
-  const maxTier = Math.max(...availableFoods.map((f) => f.Tier || 0));
+  // --- Optimization Logic ---
 
-  // Filter foods to only include those from the highest Tier
-  const tierFoods = availableFoods.filter((f) => (f.Tier || 0) === maxTier);
+  // NOTE: Tier filtering removed. We use ALL available foods to maximize Balance probability.
 
-  // Step 3: Optimization via Combination Search
   let bestDiets = [];
   const MAX_ITEMS_TYPES = 6;
   const MAX_ITERATIONS = 5000;
@@ -78,16 +74,17 @@ export function getSuggestedDiets() {
   const generateRandomDiet = () => {
     let diet = [];
     let currentCalories = 0;
-    // Use tierFoods instead of availableFoods
+
+    // Sample from entire pool
     const uniqueFoodCount = Math.min(
-      tierFoods.length,
+      availableFoods.length,
       2 + Math.floor(Math.random() * (MAX_ITEMS_TYPES - 1))
     );
     const foodsToDrawFrom = [];
 
     while (foodsToDrawFrom.length < uniqueFoodCount) {
-      const randomIndex = Math.floor(Math.random() * tierFoods.length);
-      const food = tierFoods[randomIndex];
+      const randomIndex = Math.floor(Math.random() * availableFoods.length);
+      const food = availableFoods[randomIndex];
       if (!foodsToDrawFrom.includes(food)) foodsToDrawFrom.push(food);
     }
 
@@ -116,12 +113,22 @@ export function getSuggestedDiets() {
     return diet;
   };
 
-  const getTasteScore = (foodName) => {
+  const getTasteValue = (foodName) => {
     const status = userPreferences[foodName]?.status;
-    if (status === FOOD_STATUS_KEYS.DELICIOUS) return 5;
-    if (status === FOOD_STATUS_KEYS.GOOD) return 3;
-    if (status === FOOD_STATUS_KEYS.OK) return 2;
-    return 1; // Fallback, though filters prevent this
+    if (status === FOOD_STATUS_KEYS.DELICIOUS) return 3;
+    if (status === FOOD_STATUS_KEYS.GOOD) return 2;
+    if (status === FOOD_STATUS_KEYS.OK) return 1;
+    return 0;
+  };
+
+  // Quality Score Calculation
+  // Formula: (Tier * 16) + (Taste * 10) + (Level * 1)
+  const getQualityScore = (food) => {
+      const tier = food.Tier || 0;
+      const level = food.Level || 0;
+      const taste = getTasteValue(food.Food_Name);
+
+      return (tier * 16) + (taste * 10) + (level * 1);
   };
 
   const analyzeDiet = (diet) => {
@@ -132,9 +139,9 @@ export function getSuggestedDiets() {
       Vitamins: 0,
       TotalCalories: 0,
     };
-    if (diet.length === 0) return { score: Infinity, tasteScore: 0, totals: totals };
+    if (diet.length === 0) return { score: Infinity, qualityScore: 0, totals: totals };
 
-    let totalTaste = 0;
+    let totalQuality = 0;
 
     diet.forEach((food) => {
       totals.Carbs += food.Carbs;
@@ -142,13 +149,13 @@ export function getSuggestedDiets() {
       totals.Protein += food.Protein;
       totals.Vitamins += food.Vitamins;
       totals.TotalCalories += food.Official_Calories_Game;
-      totalTaste += getTasteScore(food.Food_Name);
+      totalQuality += getQualityScore(food);
     });
 
     return {
         diet,
         score: calculateDietScore(totals),
-        tasteScore: totalTaste / diet.length,
+        qualityScore: totalQuality / diet.length,
         totals
     };
   };
@@ -176,27 +183,25 @@ export function getSuggestedDiets() {
     }
   }
 
-  // Step 4: Selection Logic
-  // Filter for Good Balance (Variance Score < 15)
-  const balancedDiets = bestDiets.filter(d => d.score < 15);
+  // --- Sorting Strategy ---
+  // Priority 1: Balance Score (Variance) - Lower is better.
+  // Priority 2: Quality Score - Higher is better.
+  // We use a threshold for Balance. If the difference is negligible, we pick the higher Quality.
 
-  let finalSelection = [];
+  bestDiets.sort((a, b) => {
+      const balanceDiff = Math.abs(a.score - b.score);
 
-  if (balancedDiets.length > 0) {
-      // If balanced diets exist, sort by Taste Score (Descending)
-      // Secondary sort: Balance Score (Ascending) for ties
-      balancedDiets.sort((a, b) => {
-          if (Math.abs(b.tasteScore - a.tasteScore) > 0.01) return b.tasteScore - a.tasteScore;
-          return a.score - b.score;
-      });
-      finalSelection = balancedDiets;
-  } else {
-      // Fallback: If no balanced diets, take ALL diets and sort by Balance Score (Ascending)
-      bestDiets.sort((a, b) => a.score - b.score);
-      finalSelection = bestDiets;
-  }
+      // If variance difference is less than 1.0, considered "equal" balance-wise.
+      // Use Quality as tie-breaker.
+      if (balanceDiff < 1.0) {
+          return b.qualityScore - a.qualityScore;
+      }
 
-  const top3Diets = finalSelection.slice(0, 3);
+      // Otherwise strict Balance sort
+      return a.score - b.score;
+  });
+
+  const top3Diets = bestDiets.slice(0, 3);
 
   if (top3Diets.length === 0) {
     return { error: "NO_COMBINATION_FOUND" };
