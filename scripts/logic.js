@@ -63,7 +63,10 @@ export function getSuggestedDiets() {
     return { error: "NO_SUITABLE_FOODS" };
   }
 
-  // Step 2: Optimization via Combination Search
+  // --- Optimization Logic ---
+
+  // NOTE: Tier filtering removed. We use ALL available foods to maximize Balance probability.
+
   let bestDiets = [];
   const MAX_ITEMS_TYPES = 6;
   const MAX_ITERATIONS = 5000;
@@ -71,6 +74,8 @@ export function getSuggestedDiets() {
   const generateRandomDiet = () => {
     let diet = [];
     let currentCalories = 0;
+
+    // Sample from entire pool
     const uniqueFoodCount = Math.min(
       availableFoods.length,
       2 + Math.floor(Math.random() * (MAX_ITEMS_TYPES - 1))
@@ -108,6 +113,24 @@ export function getSuggestedDiets() {
     return diet;
   };
 
+  const getTasteValue = (foodName) => {
+    const status = userPreferences[foodName]?.status;
+    if (status === FOOD_STATUS_KEYS.DELICIOUS) return 3;
+    if (status === FOOD_STATUS_KEYS.GOOD) return 2;
+    if (status === FOOD_STATUS_KEYS.OK) return 1;
+    return 0;
+  };
+
+  // Quality Score Calculation
+  // Formula: (Tier * 16) + (Taste * 10) + (Level * 1)
+  const getQualityScore = (food) => {
+      const tier = food.Tier || 0;
+      const level = food.Level || 0;
+      const taste = getTasteValue(food.Food_Name);
+
+      return (tier * 16) + (taste * 10) + (level * 1);
+  };
+
   const analyzeDiet = (diet) => {
     let totals = {
       Carbs: 0,
@@ -116,7 +139,9 @@ export function getSuggestedDiets() {
       Vitamins: 0,
       TotalCalories: 0,
     };
-    if (diet.length === 0) return { score: Infinity, totals: totals };
+    if (diet.length === 0) return { score: Infinity, qualityScore: 0, totals: totals };
+
+    let totalQuality = 0;
 
     diet.forEach((food) => {
       totals.Carbs += food.Carbs;
@@ -124,9 +149,15 @@ export function getSuggestedDiets() {
       totals.Protein += food.Protein;
       totals.Vitamins += food.Vitamins;
       totals.TotalCalories += food.Official_Calories_Game;
+      totalQuality += getQualityScore(food);
     });
 
-    return { diet, score: calculateDietScore(totals), totals };
+    return {
+        diet,
+        score: calculateDietScore(totals),
+        qualityScore: totalQuality / diet.length,
+        totals
+    };
   };
 
   const resultsMap = new Map();
@@ -152,10 +183,22 @@ export function getSuggestedDiets() {
     }
   }
 
-  // Sort by Balance Score primarily, then by Total Calories
+  // --- Sorting Strategy ---
+  // Priority 1: Balance Score (Variance) - Lower is better.
+  // Priority 2: Quality Score - Higher is better.
+  // We use a threshold for Balance. If the difference is negligible, we pick the higher Quality.
+
   bestDiets.sort((a, b) => {
-    if (Math.abs(a.score - b.score) > 0.05) return a.score - b.score;
-    return b.totals.TotalCalories - a.totals.TotalCalories;
+      const balanceDiff = Math.abs(a.score - b.score);
+
+      // If variance difference is less than 1.0, considered "equal" balance-wise.
+      // Use Quality as tie-breaker.
+      if (balanceDiff < 1.0) {
+          return b.qualityScore - a.qualityScore;
+      }
+
+      // Otherwise strict Balance sort
+      return a.score - b.score;
   });
 
   const top3Diets = bestDiets.slice(0, 3);
